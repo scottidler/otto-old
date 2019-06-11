@@ -1,0 +1,14 @@
+otto:
+  version: 1
+  params:
+    -c|--child:
+      help: specify your child
+    -a|--age:
+      help: specify your age
+    doggies:
+      nargs: -1
+      help: list of doggies
+  action: |
+    #!/bin/bash
+    echo "name=$name age=$arg"
+    echo "doggies=?"

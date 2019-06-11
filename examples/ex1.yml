@@ -1,0 +1,19 @@
+otto:
+  version: 1
+  tasks:
+    hello:
+      action: |
+        #!/bin/bash
+        echo "hello"
+      desc: hello task
+    world:
+      deps:
+        - hello
+      params:
+        -n|--name:
+          default: world
+          help: default="world"; override name
+      action: |
+        #!/bin/bash
+        echo "$name"
+      desc: world task
