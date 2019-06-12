@@ -1,0 +1,33 @@
+otto:
+  version: 1
+  jobs: 12
+opts:
+  o|option:
+    metavar: displayed_name
+    dest: stored_name
+    action: store # store_true, store_false, store_const, append, append_const, count
+    nargs: + # *, ?
+    const: const
+    default: default
+    type: type
+    choices:
+      - one
+      - two
+      - three
+    required: false # true
+    help: help message
+args:
+  positional:
+    metavar: displayed_name
+    dest: stored_name
+    action: store # store_true, store_false, store_const, append, append_const, count
+    nargs: + # *, ?
+    const: const
+    default: default
+    type: type
+    choices:
+      - one
+      - two
+      - three
+    required: false # true
+    help: help message
