@@ -14,16 +14,19 @@ OTTO_DEFAULTS = {
     'version': OTTO_VERSION,
 }
 
-OPTS_DEFAULTS = ARGS_DEFAULTS = {
-    'action': 'store',
-    'nargs': None,
-    'const': None,
-    'default': None,
-    'choices': None,
-    'required': False,
-    'metavar': None,
-    'dest': None,
-}
+POS_DEFAULTS = dict(
+    action='store',
+    nargs=None,
+    const=None,
+    default=None,
+    choices=None,
+    metavar=None,
+)
+
+OPT_DEFAULTS = dict(POS_DEFAULTS,
+    required=False,
+    dest=None,
+)
 
 def default(defaults, **yml):
     return AttrDict(dict(defaults, **yml))
@@ -41,22 +44,16 @@ def default_otto(d):
     d['otto'] = set_defaults(get_dict(d, 'otto'), OTTO_DEFAULTS)
     return d
 
-def default_opts(d):
-    d['opts'] = get_dict(d, 'opts')
-    for opt, body in d['opts'].items():
-        d['opts'][opt] = set_defaults(body, OPTS_DEFAULTS)
-    return d
-
 def default_args(d):
     d['args'] = get_dict(d, 'args')
     for arg, body in d['args'].items():
-        d['args'][arg] = set_defaults(body, ARGS_DEFAULTS)
+        d['args'][arg] = set_defaults(body, OPT_DEFAULTS if '-' in arg else POS_DEFAULTS)
     return d
 
 def default_tasks(d):
     d['tasks'] = get_dict(d, 'tasks')
     for task, body in d['tasks'].items():
-        body = default_opts(body)
+        #body = default_opts(body)
         body = default_args(body)
         d['tasks'][task] = body
     return d
@@ -68,7 +65,7 @@ def otto_load(filename=OTTO_FILENAME):
         raise OttoYmlLoadError(filename) from ex
 
     otto_yml = default_otto(otto_yml)
-    otto_yml = default_opts(otto_yml)
+    #otto_yml = default_opts(otto_yml)
     otto_yml = default_args(otto_yml)
     otto_yml = default_tasks(otto_yml)
     return AttrDict(otto_yml)

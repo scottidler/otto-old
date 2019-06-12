@@ -1,5 +1,8 @@
-opts:
-  n|name:
+args:
+  -n|--name:
     help: name
-  a|age:
+  -a|--age:
     help: age
+  ponies:
+    nargs: +
+    help: list of ponies
