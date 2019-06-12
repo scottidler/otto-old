@@ -1,8 +1,8 @@
 args:
   -n|--name:
-    help: name
+    help: specify your name
   -a|--age:
-    help: age
+    help: specify your age
   ponies:
     nargs: +
     help: list of ponies

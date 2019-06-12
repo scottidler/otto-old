@@ -60,12 +60,12 @@ def default_tasks(d):
 
 def otto_load(filename=OTTO_FILENAME):
     try:
-        otto_yml = yaml.safe_load(open(filename))
-    except ex:
+        otto_cfg = yaml.safe_load(open(filename))
+    except Exception as ex:
         raise OttoYmlLoadError(filename) from ex
 
-    otto_yml = default_otto(otto_yml)
-    #otto_yml = default_opts(otto_yml)
-    otto_yml = default_args(otto_yml)
-    otto_yml = default_tasks(otto_yml)
-    return AttrDict(otto_yml)
+    otto_cfg = default_otto(otto_cfg)
+    #otto_cfg = default_opts(otto_cfg)
+    otto_cfg = default_args(otto_cfg)
+    otto_cfg = default_tasks(otto_cfg)
+    return AttrDict(otto_cfg)

@@ -25,8 +25,13 @@ def divine(arg):
 
 def otto_parse(args=sys.argv[1:], filename=OTTO_FILENAME):
     parser = ArgumentParser()
-    otto_yml = otto_load(filename)
-    for arg, body in otto_yml.args.items():
+    parser.add_argument(
+        '--otto-yml',
+        metavar='FILENAME',
+        default=filename,
+        help=f'default="{filename}"; otto yml file to load')
+    otto_cfg = otto_load(filename)
+    for arg, body in otto_cfg.args.items():
         parser.add_argument(*divine(arg),**body)
     ns, rem = parser.parse_known_args(args)
     dbg(ns)
