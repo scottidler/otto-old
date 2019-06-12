@@ -23,8 +23,8 @@ def divine(arg):
         return arg.split('|')
     return [arg]
 
-def otto_parse(args=sys.argv[1:], filename=OTTO_FILENAME):
-    parser = ArgumentParser()
+def otto_parse(args=sys.argv[1:], prog=OTTO_PROG, desc=OTTO_DESC, filename=OTTO_FILENAME):
+    parser = ArgumentParser(prog=prog, description=desc)
     parser.add_argument(
         '--otto-yml',
         metavar='FILENAME',
