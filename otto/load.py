@@ -53,7 +53,6 @@ def default_args(d):
 def default_tasks(d):
     d['tasks'] = get_dict(d, 'tasks')
     for task, body in d['tasks'].items():
-        #body = default_opts(body)
         body = default_args(body)
         d['tasks'][task] = body
     return d
@@ -65,7 +64,6 @@ def otto_load(filename=OTTO_FILENAME):
         raise OttoYmlLoadError(filename) from ex
 
     otto_cfg = default_otto(otto_cfg)
-    #otto_cfg = default_opts(otto_cfg)
     otto_cfg = default_args(otto_cfg)
     otto_cfg = default_tasks(otto_cfg)
     return AttrDict(otto_cfg)
