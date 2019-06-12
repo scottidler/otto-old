@@ -15,6 +15,7 @@ tasks:
     verbosity: 1
   example3:
     foreach: something
-    yield: |
-      #!/bin/bash
-      echo "some-code"
+    yield:
+      action: |
+        #!/bin/bash
+        echo "some-code"

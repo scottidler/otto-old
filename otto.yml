@@ -1,0 +1,5 @@
+opts:
+  n|name:
+    help: name
+  a|age:
+    help: age
