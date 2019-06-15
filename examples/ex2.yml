@@ -1,35 +1,22 @@
 otto:
   version: 1
   jobs: 12
-opts:
-  o|option1:
-    help: option1 help message
-  O|option2:
-    metavar: displayed_name
-    dest: stored_name
-    action: store # store_true, store_false, store_const, append, append_const, count
-    nargs: + # *, ?
-    const: const
-    default: default
-    type: type
-    choices:
-      - one
-      - two
-      - three
-    required: false # true
-    help: option2 help message
 args:
-  positional:
-    metavar: displayed_name
+  -o|-option1:
+    metavar: OPT
+    help: option1 help message
+  -O|-option2:
     dest: stored_name
-    action: store # store_true, store_false, store_const, append, append_const, count
-    nargs: + # *, ?
-    const: const
-    default: default
-    type: type
+    default: three
     choices:
       - one
       - two
       - three
-    required: false # true
+    help: option2 help message
+  positional:
+    default: 1
+    choices:
+      - 1
+      - 2
+      - 3
     help: help message
