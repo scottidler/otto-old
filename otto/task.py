@@ -8,6 +8,11 @@ class OttoArg:
         self.args = name.split('|') if '-' in name else [name]
         self.kwargs = kwargs
 
+    def __repr__(self):
+        return f'OttoArg(args={self.args}, kwargs={self.kwargs})'
+
+    __str__ = __repr__
+
 
 class OttoTask:
     def __init__(
@@ -22,3 +27,17 @@ class OttoTask:
         self.desc = desc or ''
         self.args = args or []
         self.tasks = tasks or []
+
+    def __repr__(self):
+        fields = ', '.join([
+            f'name={self.name}',
+            f'actions={self.actions}',
+            f'deps={self.deps}',
+            f'uptodate={self.uptodate}',
+            f'desc="{self.desc}"',
+            f'args={self.args}',
+            f'tasks={self.tasks}',
+        ])
+        return f'OttoTask({fields})'
+
+    __str__ = __repr__

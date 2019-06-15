@@ -5,7 +5,7 @@ tasks:
     action: |
       #!/bin/bash
       echo "hello"
-    help: hello task
+    desc: hello task
   world:
     deps:
       - hello
@@ -16,4 +16,4 @@ tasks:
     action: |
       #!/bin/bash
       echo "$name"
-    help: world task
+    desc: world task
