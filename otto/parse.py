@@ -19,20 +19,6 @@ from leatherman.dbg import dbg
 TYPES = {'int': int, 'str': str, 'type': type}
 
 
-def make_flags(arg):
-    if not arg:
-        raise ArgSpecError(arg)
-    return arg.split('|')
-
-
-def divine(arg):
-    if not arg:
-        raise ArgSpecError(arg)
-    if '-' in arg:
-        return arg.split('|')
-    return [arg]
-
-
 def otto_parse(args=None, prog=None, desc=None, otto_yml=None, version=None, jobs=None):
     parser = ArgumentParser(
         prog=prog or OTTO_PROG,

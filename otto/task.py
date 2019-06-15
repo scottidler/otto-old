@@ -2,24 +2,23 @@
 # -*- coding: utf-8 -*-
 
 
-class OttoArgs:
-    def __init__(
-        self,
-        name,
-        action=None,
-        nargs=None,
-        const=None,
-        default=None,
-        type=None,
-        choices=None,
-        required=None,
-        help=None,
-    ):
-        pass
+class OttoArg:
+    def __init__(self, name, **kwargs):
+        assert isinstance(name, str) and name != ''
+        self.args = name.split('|') if '-' in name else [name]
+        self.kwargs = kwargs
 
 
 class OttoTask:
-    def __init__(self, name, actions, deps=None, help=None, args=None, tasks=None):
+    def __init__(
+        self, name, actions, deps=None, uptodate=None, desc=None, args=None, tasks=None
+    ):
+        assert isinstance(name, str) and name != ''
+        assert isinstance(actions, list) and name != []
         self.name = name
-        self.args = args
-        self.tasks = tasks
+        self.actions = actions
+        self.deps = deps or []
+        self.uptodate = uptodate or []
+        self.desc = desc or ''
+        self.args = args or []
+        self.tasks = tasks or []
