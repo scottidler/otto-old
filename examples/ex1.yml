@@ -5,13 +5,15 @@ tasks:
     action: |
       #!/bin/bash
       echo "hello"
+    help: hello task
   world:
     deps:
       - hello
-    opts:
-      n|name:
+    args:
+      -n|--name:
         default: world
         help: default="world"; override name
     action: |
       #!/bin/bash
       echo "$name"
+    help: world task

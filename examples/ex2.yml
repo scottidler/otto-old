@@ -2,10 +2,10 @@ otto:
   version: 1
   jobs: 12
 args:
-  -o|-option1:
+  -o|--option1:
     metavar: OPT
     help: option1 help message
-  -O|-option2:
+  -O|--option2:
     dest: stored_name
     default: three
     choices:
