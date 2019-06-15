@@ -6,22 +6,11 @@ from setuptools import setup, find_packages
 with open("README.md", "r") as f:
     long_description = f.read()
 
-requirements = [
-    'attrdict',
-    'ruamel.yaml',
-]
+requirements = ['attrdict', 'ruamel.yaml']
 
-setup_requirements = [
-    'pytest-runner',
-    'setuptools>=40.5.0',
-]
+setup_requirements = ['pytest-runner', 'setuptools>=40.5.0']
 
-test_requirements = [
-    'pytest',
-    'pytest-cov',
-    'pytest-mock',
-    'pytest-watch',
-]
+test_requirements = ['pytest', 'pytest-cov', 'pytest-mock', 'pytest-watch']
 
 extras = {'test': test_requirements}
 

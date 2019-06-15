@@ -4,7 +4,4 @@
 from otto.load import otto_load
 from otto.parse import otto_parse
 
-__all__ = [
-    otto_load,
-    otto_parse,
-]
+__all__ = [otto_load, otto_parse]

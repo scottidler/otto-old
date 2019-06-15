@@ -14,20 +14,26 @@ def get_dict(obj, key, default=None):
     assert isinstance(obj, dict)
     return obj.get(key, default or {})
 
+
 def get_list(obj, key, default=None):
     assert isinstance(obj, dict)
     return obj.get(key, default or [])
+
 
 def set_defaults(obj, defaults):
     assert isinstance(obj, dict)
     return dict(defaults, **obj)
 
+
 def default_args(obj):
     assert isinstance(obj, dict)
     obj['args'] = get_dict(obj, 'args')
     for arg, body in obj['args'].items():
-        obj['args'][arg] = set_defaults(body, OPT_DEFAULTS if '-' in arg else POS_DEFAULTS)
+        obj['args'][arg] = set_defaults(
+            body, OPT_DEFAULTS if '-' in arg else POS_DEFAULTS
+        )
     return obj
+
 
 def default_tasks(obj):
     assert isinstance(obj, dict)
@@ -36,6 +42,7 @@ def default_tasks(obj):
         body = default_args(body)
         obj['tasks'][task] = body
     return obj
+
 
 def otto_load(otto_yml=OTTO_YML):
     try:
