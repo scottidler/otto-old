@@ -47,7 +47,7 @@ class OttoLoader:
     @staticmethod
     def load_arg(name, cfg):
         if 'choices' in cfg:
-            cfg['choies'] = [str(choice) for choice in cfg['choices']]
+            cfg['choices'] = [str(choice) for choice in cfg['choices']]
         if 'type' in cfg:
             cfg['type'] = TYPES[cfg['type']]
         return OttoArg(name, **cfg)

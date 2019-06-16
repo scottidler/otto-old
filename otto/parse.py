@@ -57,7 +57,6 @@ class OttoParser:
         otto_version=None,
         otto_jobs=None,
     ):
-        cfg, main = otto_load(otto_yml or self.otto_yml)
         parser = ArgumentParser(
             prog=prog or OTTO_PROG,
             formatter_class=RawDescriptionHelpFormatter,
@@ -82,9 +81,12 @@ class OttoParser:
             help=f'default=%(default)s; number of jobs to use',
         )
         ns, args = parser.parse_known_args(args or self.args)
+        cfg, main = otto_load(ns.otto_yml)
         parser = ArgumentParser(
             prog=prog or self.prog, description=desc or self.desc, parents=[parser]
         )
         parser.set_defaults(**ns.__dict__)
+        for arg in main.args:
+            parser.add_argument(*arg.args, **arg.kwargs)
         ns, rem = parser.parse_known_args(args)
         dbg(ns, rem)
