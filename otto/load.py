@@ -10,6 +10,10 @@ from otto.constants import *
 from otto.exceptions import OttoYmlLoadError
 from otto.task import OttoArg, OttoTask
 
+from leatherman.dbg import dbg
+
+TYPES = {'int': int, 'str': str, 'type': type}
+
 
 def otto_load(otto_yml=OTTO_YML):
     loader = OttoLoader(otto_yml)
@@ -42,6 +46,10 @@ class OttoLoader:
 
     @staticmethod
     def load_arg(name, cfg):
+        if 'choices' in cfg:
+            cfg['choies'] = [str(choice) for choice in cfg['choices']]
+        if 'type' in cfg:
+            cfg['type'] = TYPES[cfg['type']]
         return OttoArg(name, **cfg)
 
     @staticmethod
