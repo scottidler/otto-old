@@ -29,15 +29,17 @@ class OttoTask:
         self.tasks = tasks or []
 
     def __repr__(self):
-        fields = ', '.join([
-            f'name={self.name}',
-            f'actions={self.actions}',
-            f'deps={self.deps}',
-            f'uptodate={self.uptodate}',
-            f'desc="{self.desc}"',
-            f'args={self.args}',
-            f'tasks={self.tasks}',
-        ])
+        fields = ', '.join(
+            [
+                f'name={self.name}',
+                f'actions={self.actions}',
+                f'deps={self.deps}',
+                f'uptodate={self.uptodate}',
+                f'desc="{self.desc}"',
+                f'args={self.args}',
+                f'tasks={self.tasks}',
+            ]
+        )
         return f'OttoTask({fields})'
 
     __str__ = __repr__

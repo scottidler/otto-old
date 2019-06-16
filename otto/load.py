@@ -22,9 +22,8 @@ class OttoLoader:
 
     def load(self, otto_yml=None):
         cfg = OttoLoader.load_cfg(otto_yml or self.otto_yml)
-        args = OttoLoader.load_args(cfg.get('args', {}))
-        tasks = OttoLoader.load_tasks(cfg.get('tasks', {}))
-        return cfg, args, tasks
+        task = OttoLoader.load_task('otto', cfg)
+        return cfg, task
 
     @staticmethod
     def get_val(cfg, key, type=None, default=None):
@@ -42,28 +41,31 @@ class OttoLoader:
         return AttrDict(cfg)
 
     @staticmethod
-    def load_args(cfg):
-        cfg = AttrDict(cfg)
-        args = []
-        for name, body in cfg.items():
-            arg = OttoArg(name, **body)
-            args += [arg]
-        return args
+    def load_arg(name, cfg):
+        return OttoArg(name, **cfg)
 
     @staticmethod
-    def load_tasks(cfg):
+    def load_task(name, cfg):
+        name = cfg.get('name', name)
+        actions = []
+        if 'actions' in cfg:
+            actions = cfg['actions']
+        elif 'action' in cfg:
+            actions = [cfg['action']]
+        assert isinstance(actions, list)
+        args = []
+        for arg, body in cfg.get('args', {}).items():
+            args += [OttoLoader.load_arg(arg, body)]
         tasks = []
-        for name, body in cfg.items():
-            actions = body.get('actions', []) or [body.get('action', [])] or []
-            assert isinstance(actions, list)
-            task = OttoTask(
-                name,
-                actions,
-                deps=OttoLoader.get_val(cfg, 'deps', type=list, default=[]),
-                uptodate=OttoLoader.get_val(cfg, 'uptodate', type=list, default=[]),
-                desc=OttoLoader.get_val(cfg, 'desc', type=str, default=''),
-                args=OttoLoader.load_args(body.get('args', {})),
-                tasks=OttoLoader.load_tasks(body.get('tasks', {})),
-            )
-            tasks += [task]
-        return tasks
+        for task, body in cfg.get('tasks', {}).items():
+            tasks += [OttoLoader.load_task(task, body)]
+        task = OttoTask(
+            name,
+            actions,
+            deps=OttoLoader.get_val(cfg, 'deps', type=list, default=[]),
+            uptodate=OttoLoader.get_val(cfg, 'uptodate', type=list, default=[]),
+            desc=OttoLoader.get_val(cfg, 'desc', type=str, default=''),
+            args=args,
+            tasks=tasks,
+        )
+        return task

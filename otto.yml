@@ -6,3 +6,7 @@ args:
   ponies:
     nargs: +
     help: list of ponies
+action: |
+  #!/bin/bash
+  echo "name=$name age=$arg"
+  echo "ponies=?"
