@@ -48,6 +48,15 @@ class OttoParser:
         self.otto_version = otto_version or OTTO_VERSION
         self.otto_jobs = otto_jobs or OTTO_JOBS
 
+    @staticmethod
+    def add_task(parser, task):
+        for arg in task.args:
+            parser.add_argument(*arg.args, **arg.kwargs)
+        if task.tasks:
+            subparsers = parser.add_subparsers(title='tasks', dest='task')
+            for task in task.tasks:
+                OttoParser.add_task(subparsers.add_parser(task.name), task)
+
     def parse(
         self,
         args=None,
@@ -86,7 +95,6 @@ class OttoParser:
             prog=prog or self.prog, description=desc or self.desc, parents=[parser]
         )
         parser.set_defaults(**ns.__dict__)
-        for arg in main.args:
-            parser.add_argument(*arg.args, **arg.kwargs)
+        OttoParser.add_task(parser, main)
         ns, rem = parser.parse_known_args(args)
         dbg(ns, rem)
