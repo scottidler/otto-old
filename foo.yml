@@ -1,14 +1,14 @@
 otto:
   version: 1
   args:
-    -n|--name:
-      help: specify your name
+    -c|--child:
+      help: specify your child
     -a|--age:
       help: specify your age
-    ponies:
+    doggies:
       nargs: -1
-      help: list of ponies
+      help: list of doggies
   action: |
     #!/bin/bash
     echo "name=$name age=$arg"
-    echo "ponies=?"
+    echo "doggies=?"

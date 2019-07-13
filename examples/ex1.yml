@@ -1,19 +1,19 @@
 otto:
   version: 1
-tasks:
-  hello:
-    action: |
-      #!/bin/bash
-      echo "hello"
-    desc: hello task
-  world:
-    deps:
-      - hello
-    args:
-      -n|--name:
-        default: world
-        help: default="world"; override name
-    action: |
-      #!/bin/bash
-      echo "$name"
-    desc: world task
+  tasks:
+    hello:
+      action: |
+        #!/bin/bash
+        echo "hello"
+      desc: hello task
+    world:
+      deps:
+        - hello
+      args:
+        -n|--name:
+          default: world
+          help: default="world"; override name
+      action: |
+        #!/bin/bash
+        echo "$name"
+      desc: world task
