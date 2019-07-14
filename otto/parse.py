@@ -142,7 +142,7 @@ class OttoParser:
             obj=AttrDict(),
         )
         spec, otto = otto_load(otto_yml=self.otto_yml)
-        self.cfg = dict(params={}, tasks={}, actions={}, deps={})
+        self.cfg = dict(params={}, tasks={}, actions={})
         cmd = self.add_task(otto, self.cfg)
         cmd.params = otto_params + cmd.params
         #dbg(dir=dir(cmd), vars=vars(cmd))
