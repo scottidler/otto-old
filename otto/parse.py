@@ -56,34 +56,36 @@ class OttoParser:
             'argument': click.Argument,
         }[param.kind](param.args, **param.kwargs)
 
-    def add_task(self, task, cfg, add_help_option=True):
-        #dbg()
+    def add_task(self, task, cfg, chain=False):
 
-        @click.pass_context
-        def callback(ctx, *args, **kwargs):
-            dbg()
+        def callback(*args, **kwargs):
             cfg['params'] = kwargs
 
-        cmd = click.Group(
-            task.name,
-            chain=True,
-            add_help_option=add_help_option,
-            invoke_without_command=True,
-            callback=callback,
-        )
-        #cmd.allow_interspersed_args = True
+        if chain:
+            cmd = click.Group(
+                task.name,
+                chain=chain,
+                invoke_without_command=True,
+                callback=callback,
+            )
+        else:
+            cmd = click.Command(
+                task.name,
+                callback=callback,
+            )
         cmd.params = [
             self.add_param(param)
             for param in task.params
         ]
         cfg['tasks'] = {
-            t.name: dict(params={}, tasks={}, actions={}, deps={})
-            for t in task.tasks
+            subtask.name: dict(params={}, tasks={}, actions={}, deps={})
+            for subtask in task.tasks
         }
-        cmd.commands = {
-            t.name: self.add_task(t, cfg['tasks'][t.name])
-            for t in task.tasks
-        }
+        for subtask in task.tasks:
+            cmd.add_command(
+                self.add_task(subtask, cfg['tasks'][subtask.name]),
+                name=subtask.name,
+            )
         return cmd
 
     def parse(
@@ -97,9 +99,7 @@ class OttoParser:
     ):
         ns = None
 
-        @click.pass_context
-        def otto_callback(ctx, *args, otto_yml=None, otto_jobs=None, otto_version=None, remainder=(), **kwargs):
-            #dbg()
+        def otto_callback(*args, otto_yml=None, otto_jobs=None, otto_version=None, remainder=(), **kwargs):
             self.otto_yml = otto_yml
             self.otto_jobs = otto_jobs
             self.otto_version = otto_version
@@ -143,11 +143,8 @@ class OttoParser:
         )
         spec, otto = otto_load(otto_yml=self.otto_yml)
         self.cfg = dict(params={}, tasks={}, actions={})
-        cmd = self.add_task(otto, self.cfg)
+        cmd = self.add_task(otto, self.cfg, chain=True)
         cmd.params = otto_params + cmd.params
-        #dbg(dir=dir(cmd), vars=vars(cmd))
-        #dbg(commands=cmd.commands)
-        dbg(remainder=self.remainder)
         cmd.main(
             args=self.remainder,
             standalone_mode=False,
