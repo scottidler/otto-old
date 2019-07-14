@@ -12,7 +12,7 @@ import click
 from attrdict import AttrDict
 
 from otto.constants import *
-from otto.exceptions import ArgSpecError
+from otto.exceptions import ParamSpecError
 from otto.load import otto_load
 
 from leatherman.dbg import dbg
@@ -50,13 +50,41 @@ class OttoParser:
         self.otto_jobs = otto_jobs or OTTO_JOBS
         self.otto_version = otto_version or OTTO_VERSION
 
-    def cli(self, ctx, *args, **kwargs):
-        for key, value in kwargs.items():
-            dbg(key, value)
-            setattr(self, key, value)
+    def add_param(self, param):
+        return {
+            'option': click.Option,
+            'argument': click.Argument,
+        }[param.kind](param.args, **param.kwargs)
 
-    def resultcallback(self, *args, **kwargs):
-        dbg()
+    def add_task(self, task, cfg, add_help_option=True):
+        #dbg()
+
+        @click.pass_context
+        def callback(ctx, *args, **kwargs):
+            dbg()
+            cfg['params'] = kwargs
+
+        cmd = click.Group(
+            task.name,
+            chain=True,
+            add_help_option=add_help_option,
+            invoke_without_command=True,
+            callback=callback,
+        )
+        #cmd.allow_interspersed_args = True
+        cmd.params = [
+            self.add_param(param)
+            for param in task.params
+        ]
+        cfg['tasks'] = {
+            t.name: dict(params={}, tasks={}, actions={}, deps={})
+            for t in task.tasks
+        }
+        cmd.commands = {
+            t.name: self.add_task(t, cfg['tasks'][t.name])
+            for t in task.tasks
+        }
+        return cmd
 
     def parse(
         self,
@@ -71,7 +99,7 @@ class OttoParser:
 
         @click.pass_context
         def otto_callback(ctx, *args, otto_yml=None, otto_jobs=None, otto_version=None, remainder=(), **kwargs):
-            dbg()
+            #dbg()
             self.otto_yml = otto_yml
             self.otto_jobs = otto_jobs
             self.otto_version = otto_version
@@ -114,28 +142,17 @@ class OttoParser:
             obj=AttrDict(),
         )
         spec, otto = otto_load(otto_yml=self.otto_yml)
-        cli.add_help_option = True
-        cli.params = otto_params
-        for arg, body in spec.otto.args.items():
-            if '-' in arg:
-                cli.params += [
-                    click.Option(
-                        param_decls=tuple(arg.split('|')),
-                        **body,
-                    )
-                ]
-            else:
-                body.pop('help', None)
-                cli.params += [
-                    click.Argument(
-                        param_decls=(arg,),
-                        **body,
-                    )
-                ]
-        cli.ignore_unknown_options =False
-        cli.allow_interspersed_args=True
-        cli.main(
+        self.cfg = dict(params={}, tasks={}, actions={}, deps={})
+        cmd = self.add_task(otto, self.cfg)
+        cmd.params = otto_params + cmd.params
+        #dbg(dir=dir(cmd), vars=vars(cmd))
+        #dbg(commands=cmd.commands)
+        dbg(remainder=self.remainder)
+        cmd.main(
             args=self.remainder,
             standalone_mode=False,
             obj=AttrDict(),
         )
+
+        from pprint import pprint
+        pprint(dict(cfg=self.cfg))

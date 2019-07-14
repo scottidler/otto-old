@@ -1,6 +1,6 @@
 otto:
   version: 1
-  args:
+  params:
     -n|--name:
       help: specify your name
     -a|--age:

@@ -1,7 +1,7 @@
 otto:
   version: 1
   jobs: 12
-  args:
+  params:
     -o|--option1:
       metavar: OPT
       help: option1 help message

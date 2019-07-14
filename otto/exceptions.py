@@ -8,7 +8,7 @@ class OttoYmlLoadError(Exception):
         super().__init__(msg)
 
 
-class ArgSpecError(Exception):
+class ParamSpecError(Exception):
     def __init__(self, arg):
         msg = f'arg spec error for arg="{arg}"'
         super().__init__(msg)

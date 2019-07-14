@@ -1,6 +1,6 @@
 otto:
   version: 1
-  args:
+  params:
     -c|--child:
       help: specify your child
     -a|--age:

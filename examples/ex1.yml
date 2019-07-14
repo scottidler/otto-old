@@ -9,7 +9,7 @@ otto:
     world:
       deps:
         - hello
-      args:
+      params:
         -n|--name:
           default: world
           help: default="world"; override name

@@ -2,21 +2,27 @@
 # -*- coding: utf-8 -*-
 
 
-class OttoArg:
+class OttoParam:
     def __init__(self, name, **kwargs):
         assert isinstance(name, str) and name != ''
-        self.args = name.split('|') if '-' in name else [name]
+        if '-' in name:
+            self.args = tuple(name.split('|'))
+            self.kind = 'option'
+        else:
+            self.args = (name,)
+            self.kind = 'argument'
+            kwargs.pop('help', None)
         self.kwargs = kwargs
 
     def __repr__(self):
-        return f'OttoArg(args={self.args}, kwargs={self.kwargs})'
+        return f'OttoParam(args={self.args}, kwargs={self.kwargs})'
 
     __str__ = __repr__
 
 
 class OttoTask:
     def __init__(
-        self, name, actions, deps=None, uptodate=None, desc=None, args=None, tasks=None
+        self, name, actions, deps=None, uptodate=None, desc=None, params=None, tasks=None
     ):
         assert isinstance(name, str) and name != ''
         assert isinstance(actions, list) and name != []
@@ -25,7 +31,7 @@ class OttoTask:
         self.deps = deps or []
         self.uptodate = uptodate or []
         self.desc = desc or ''
-        self.args = args or []
+        self.params = params or []
         self.tasks = tasks or []
 
     def __repr__(self):
@@ -36,7 +42,7 @@ class OttoTask:
                 f'deps={self.deps}',
                 f'uptodate={self.uptodate}',
                 f'desc="{self.desc}"',
-                f'args={self.args}',
+                f'params={self.params}',
                 f'tasks={self.tasks}',
             ]
         )
