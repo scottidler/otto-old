@@ -1,21 +1,38 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+class NotSet():
+    def __repr__(self):
+        return 'NotSet'
+
+    def __nonzero__(self):
+        return False
 
 class OttoParam:
-    def __init__(self, name, **kwargs):
-        assert isinstance(name, str) and name != ''
-        if '-' in name:
-            self.args = tuple(name.split('|'))
+    def __init__(self, uid, value=None, **kwargs):
+        assert isinstance(uid, str) and uid != ''
+        if '-' in uid:
+            self.args = tuple(uid.split('|'))
             self.kind = 'option'
         else:
-            self.args = (name,)
+            self.args = (uid,)
             self.kind = 'argument'
             kwargs.pop('help', None)
+        self.name = kwargs.get('name', None)
+        if not self.name:
+            longest = sorted(self.args, key=len)[-1]
+            if longest.startswith('--'):
+                self.name = longest[2:]
+            elif longest.startswith('-'):
+                self.name = longest[1:]
+            else:
+                self.name = longest
+        self.name = self.name.replace('-', '_')
+        self.value = value
         self.kwargs = kwargs
 
     def __repr__(self):
-        return f'OttoParam(args={self.args}, kwargs={self.kwargs})'
+        return f'OttoParam(name={self.name}, value={self.value} args={self.args}, kwargs={self.kwargs})'
 
     __str__ = __repr__
 
@@ -31,8 +48,8 @@ class OttoTask:
         self.deps = deps or []
         self.uptodate = uptodate or []
         self.desc = desc or ''
-        self.params = params or []
-        self.tasks = tasks or []
+        self.params = params or {}
+        self.tasks = tasks or {}
 
     def __repr__(self):
         fields = ', '.join(

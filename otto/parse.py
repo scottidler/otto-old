@@ -13,7 +13,7 @@ from attrdict import AttrDict
 
 from otto.constants import *
 from otto.exceptions import ParamSpecError
-from otto.load import otto_load
+from otto.load import otto_load, OttoLoader
 
 from leatherman.dbg import dbg
 
@@ -49,6 +49,7 @@ class OttoParser:
         self.otto_yml = otto_yml or OTTO_YML
         self.otto_jobs = otto_jobs or OTTO_JOBS
         self.otto_version = otto_version or OTTO_VERSION
+        self.remainder = []
 
     def add_param(self, param):
         return {
@@ -56,34 +57,71 @@ class OttoParser:
             'argument': click.Argument,
         }[param.kind](param.args, **param.kwargs)
 
-    def add_task(self, task, cfg, chain=False):
-
+    def callback(self, task):
         def callback(*args, **kwargs):
-            cfg['params'] = kwargs
+            self.remainder = kwargs.pop('remainder', [])
+            for key, value in kwargs.items():
+                try:
+                    task.params[key].value = value
+                except Exception as ex:
+                    dbg(key, value, ex)
+                    for name, param in task.params.items():
+                        dbg(name, param)
+        return callback
 
-        if chain:
-            cmd = click.Group(
-                task.name,
-                chain=chain,
-                invoke_without_command=True,
-                callback=callback,
-            )
-        else:
-            cmd = click.Command(
-                task.name,
-                callback=callback,
-            )
+    def otto_task(self, otto_yml=None, otto_jobs=None, otto_version=None):
+        spec = {
+            'otto' : {
+                'params': {
+                    '--otto-yml': {
+                        'metavar': 'PATH',
+                        'default': otto_yml or self.otto_yml,
+                        'help': 'specifiy the yml file to use',
+                    },
+                    '--otto-jobs': {
+                        'metavar': 'INT',
+                        'default': otto_jobs or self.otto_jobs,
+                        'help': 'specify the number of processes to use',
+                    },
+                    '--otto-version': {
+                        'metavar': 'INT',
+                        'default': otto_version or self.otto_version,
+                        'help': 'specify the version of yml spec to use',
+                    },
+                }
+            }
+        }
+        return OttoLoader.load_task('otto', spec['otto'])
+
+    def add_otto_cmd(self, task):
+        cmd = click.Group(
+            task.name,
+            chain=True,
+            add_help_option=False,
+            invoke_without_command=True,
+            callback=self.callback(task),
+        )
         cmd.params = [
             self.add_param(param)
-            for param in task.params
+            for name, param in task.params.items()
         ]
-        cfg['tasks'] = {
-            subtask.name: dict(params={}, tasks={}, actions={}, deps={})
-            for subtask in task.tasks
-        }
-        for subtask in task.tasks:
+        return cmd
+
+    def add_cmd(self, task, cmd=None):
+
+        if cmd is None:
+            cmd = click.Command(
+                task.name,
+                callback=self.callback(task),
+            )
+            cmd.params = []
+        cmd.params += [
+            self.add_param(param)
+            for name, param in task.params.items()
+        ]
+        for name, subtask in task.tasks.items():
             cmd.add_command(
-                self.add_task(subtask, cfg['tasks'][subtask.name]),
+                self.add_cmd(subtask),
                 name=subtask.name,
             )
         return cmd
@@ -97,59 +135,28 @@ class OttoParser:
         otto_jobs=None,
         otto_version=None,
     ):
-        ns = None
-
-        def otto_callback(*args, otto_yml=None, otto_jobs=None, otto_version=None, remainder=(), **kwargs):
-            self.otto_yml = otto_yml
-            self.otto_jobs = otto_jobs
-            self.otto_version = otto_version
-            self.remainder = remainder
-        cli = click.Group(
-            prog or self.prog,
-            chain=True,
-            add_help_option=False,
-            invoke_without_command=True,
-            callback=otto_callback,
-        )
-        otto_params = [
-            click.Option(
-                param_decls=('--otto-yml',),
-                metavar='PATH',
-                default=otto_yml or self.otto_yml,
-                help='otto.yml'),
-            click.Option(
-                param_decls=('--otto-jobs',),
-                metavar='INT',
-                default=otto_jobs or self.otto_jobs,
-                help='otto num process'),
-            click.Option(
-                param_decls=('--otto-version',),
-                metavar='INT',
-                default=otto_version or self.otto_version,
-                help='otto version'),
-        ]
-        cli.params = otto_params + [
+        name, otto = self.otto_task(otto_yml, otto_jobs, otto_version)
+        cmd = self.add_otto_cmd(otto)
+        cmd.params += [
             click.Argument(
                 param_decls=('remainder',),
                 nargs=-1,
                 required=False,
             )
         ]
-        cli.ignore_unknown_options = True
-        cli.main(
+        cmd.ignore_unknown_options = True
+        cmd.main(
             args=args or self.args,
             standalone_mode=False,
             obj=AttrDict(),
         )
-        spec, otto = otto_load(otto_yml=self.otto_yml)
-        self.cfg = dict(params={}, tasks={}, actions={})
-        cmd = self.add_task(otto, self.cfg, chain=True)
-        cmd.params = otto_params + cmd.params
+        cmd.add_help_option=True
+        cmd.params = cmd.params[:-1]
+        spec, otto = otto_load(otto_yml=otto.params['otto_yml'].value)
+        cmd = self.add_cmd(otto, cmd=cmd)
         cmd.main(
             args=self.remainder,
             standalone_mode=False,
             obj=AttrDict(),
         )
-
-        from pprint import pprint
-        pprint(dict(cfg=self.cfg))
+        dbg(otto)

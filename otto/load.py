@@ -26,7 +26,7 @@ class OttoLoader:
 
     def load(self, otto_yml=None):
         spec = OttoLoader.load_spec(otto_yml or self.otto_yml)
-        task = OttoLoader.load_task('otto', spec.otto)
+        name, task = OttoLoader.load_task('otto', spec.otto)
         return spec, task
 
     @staticmethod
@@ -45,30 +45,32 @@ class OttoLoader:
         return AttrDict(spec)
 
     @staticmethod
-    def load_param(name, spec):
+    def load_param(uid, spec):
         if 'choices' in spec:
             spec['choices'] = [str(choice) for choice in spec['choices']]
         if 'type' in spec:
             spec['type'] = TYPES[spec['type']]
-        return OttoParam(name, **spec)
+        param = OttoParam(uid, **spec)
+        return param.name, param
 
     @staticmethod
-    def load_task(name, spec):
-        name = spec.get('name', name)
+    def load_task(uid, spec):
+        name = spec.get('name', uid)
         actions = []
         if 'actions' in spec:
             actions = spec['actions']
         elif 'action' in spec:
             actions = [spec['action']]
         assert isinstance(actions, list)
-        params = [
-            OttoLoader.load_param(param, body)
-            for param, body in spec.get('params', {}).items()
-        ]
-        tasks = [
-            OttoLoader.load_task(task, body)
-            for task, body in spec.get('tasks', {}).items()
-        ]
+        params = dict([
+            OttoLoader.load_param(uid, body)
+            for uid, body in spec.get('params', {}).items()
+        ])
+        tasks = dict([
+            OttoLoader.load_task(uid, body)
+            for uid, body in spec.get('tasks', {}).items()
+        ])
+        dbg(tasks)
         task = OttoTask(
             name,
             actions,
@@ -78,28 +80,4 @@ class OttoLoader:
             params=params,
             tasks=tasks,
         )
-        return task
-
-#    @staticmethod
-#    def load_param(spec):
-#        args = []
-#        for name, body in spec.get('args', []):
-#            body['choices'] = [str(choice) for choice in body.get('choices', [])]
-#            body['type'] = TYPES[body.get('type', 'None')]
-#            args += [OttoParam(
-#                OttoParam(name, **body)
-#            )]
-#
-#    @staticmethod
-#    def load_tasks(spec):
-#        tasks = []
-#        for name, body in spec.get('tasks', []):
-#            task += [OttoTask(
-#                name=body.get('name', name),
-#                desc=body.get('desc', None),
-#                deps=body.get('deps', []),
-#                args=OttoLoader.load_param(body),
-#                tasks=OttoLoader.load_tasks(body),
-#                actions=body.get('actions', [])
-#                uptodate=body.get('uptodate', [])
-#            )]
+        return task.name, task
