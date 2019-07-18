@@ -1,15 +1,16 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 '''
-otto
--based cli|task runner
+otto-based cli|task runner
 '''
 
 import ast
 import sys
 import click
 
-from attrdict import AttrDict
+from copy import deepcopy
+from addict import Dict
+from click import Option, Argument
 
 from otto.constants import *
 from otto.exceptions import ParamSpecError
@@ -19,7 +20,12 @@ from leatherman.dbg import dbg
 
 
 def otto_parse(
-    args=None, prog=None, desc=None, otto_yml=None, otto_jobs=None, otto_version=None
+    args=None,
+    prog=None,
+    desc=None,
+    otto_yml=None,
+    otto_jobs=None,
+    otto_version=None
 ):
     parser = OttoParser(
         args=args,
@@ -51,12 +57,6 @@ class OttoParser:
         self.otto_version = otto_version or OTTO_VERSION
         self.remainder = []
 
-    def add_param(self, param):
-        return {
-            'option': click.Option,
-            'argument': click.Argument,
-        }[param.kind](param.args, **param.kwargs)
-
     def callback(self, task):
         def callback(*args, **kwargs):
             self.remainder = kwargs.pop('remainder', [])
@@ -64,13 +64,11 @@ class OttoParser:
                 try:
                     task.params[key].value = value
                 except Exception as ex:
-                    dbg(key, value, ex)
-                    for name, param in task.params.items():
-                        dbg(name, param)
+                    dbg(ex)
         return callback
 
-    def otto_task(self, otto_yml=None, otto_jobs=None, otto_version=None):
-        spec = {
+    def otto_spec(self, otto_yml=None, otto_jobs=None, otto_version=None):
+        return Dict({
             'otto' : {
                 'params': {
                     '--otto-yml': {
@@ -90,39 +88,57 @@ class OttoParser:
                     },
                 }
             }
-        }
-        return OttoLoader.load_task('otto', spec['otto'])
+        })
 
-    def add_otto_cmd(self, task):
+    def add_params(self, params):
+        click_params = []
+        new_params = {}
+        for uid, param in deepcopy(params).items():
+            assert isinstance(uid, str) and uid != ''
+            kwargs = dict(**param)
+            if '-' in uid:
+                decls = tuple(uid.split('|'))
+                ctor = Option
+            else:
+                decls = (uid,)
+                ctor = Argument
+                kwargs.pop('help', None)
+            click_param = ctor(decls, **kwargs)
+            new_params[click_param.name] = Dict(
+                decls=decls,
+                **kwargs,
+            )
+            click_params += [click_param]
+            params.pop(uid)
+        params.update(new_params)
+        return click_params
+
+    def add_otto_cmd(self, spec):
         cmd = click.Group(
-            task.name,
+            spec.otto,
             chain=True,
             add_help_option=False,
             invoke_without_command=True,
-            callback=self.callback(task),
+            callback=self.callback(spec.otto),
         )
-        cmd.params = [
-            self.add_param(param)
-            for name, param in task.params.items()
-        ]
+        cmd.params = self.add_params(spec.otto.params)
         return cmd
 
-    def add_cmd(self, task, cmd=None):
-
+    def add_cmd(self, spec, cmd=None):
         if cmd is None:
             cmd = click.Command(
-                task.name,
-                callback=self.callback(task),
+                spec.otto,
+                callback=self.callback(spec.otto),
             )
             cmd.params = []
-        cmd.params += [
-            self.add_param(param)
-            for name, param in task.params.items()
-        ]
-        for name, subtask in task.tasks.items():
+        else:
+            cmd.callback = self.callback(spec.otto)
+        cmd.params = self.add_params(spec.otto.params)
+        for subuid, subtask in spec.otto.tasks.items():
+            subcmd = self.add_cmd(subuid, subtask)
             cmd.add_command(
-                self.add_cmd(subtask),
-                name=subtask.name,
+                subcmd,
+                name=subcmd.name,
             )
         return cmd
 
@@ -135,8 +151,8 @@ class OttoParser:
         otto_jobs=None,
         otto_version=None,
     ):
-        name, otto = self.otto_task(otto_yml, otto_jobs, otto_version)
-        cmd = self.add_otto_cmd(otto)
+        otto_spec1 = self.otto_spec(otto_yml, otto_jobs, otto_version)
+        cmd = self.add_otto_cmd(otto_spec1)
         cmd.params += [
             click.Argument(
                 param_decls=('remainder',),
@@ -148,15 +164,17 @@ class OttoParser:
         cmd.main(
             args=args or self.args,
             standalone_mode=False,
-            obj=AttrDict(),
+            obj={},
         )
         cmd.add_help_option=True
-        cmd.params = cmd.params[:-1]
-        spec, otto = otto_load(otto_yml=otto.params['otto_yml'].value)
-        cmd = self.add_cmd(otto, cmd=cmd)
+        #cmd.params = cmd.params[:-1]
+        cmd.params = []
+        user_spec = otto_load(otto_yml=otto_spec1.otto.params.otto_yml.value)
+        user_spec.update(self.otto_spec(otto_yml, otto_jobs, otto_version))
+        cmd = self.add_cmd(user_spec, cmd=cmd)
         cmd.main(
             args=self.remainder,
             standalone_mode=False,
-            obj=AttrDict(),
+            obj={},
         )
-        dbg(otto)
+        dbg(user_spec)
