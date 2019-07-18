@@ -92,25 +92,23 @@ class OttoParser:
 
     def add_params(self, params):
         click_params = []
-        new_params = {}
-        for uid, param in deepcopy(params).items():
-            assert isinstance(uid, str) and uid != ''
-            kwargs = dict(**param)
+        def otto_first(x):
+            return 0 if 'otto' in x else 1
+        for uid in sorted(params.keys(), key=otto_first):
+            param = params.pop(uid)
             if '-' in uid:
                 decls = tuple(uid.split('|'))
                 ctor = Option
             else:
                 decls = (uid,)
                 ctor = Argument
-                kwargs.pop('help', None)
-            click_param = ctor(decls, **kwargs)
-            new_params[click_param.name] = Dict(
+                param.pop('help', None)
+            click_param = ctor(decls, **param)
+            params[click_param.name] = Dict(
                 decls=decls,
-                **kwargs,
+                **param,
             )
             click_params += [click_param]
-            params.pop(uid)
-        params.update(new_params)
         return click_params
 
     def add_otto_cmd(self, spec):
@@ -151,8 +149,8 @@ class OttoParser:
         otto_jobs=None,
         otto_version=None,
     ):
-        otto_spec1 = self.otto_spec(otto_yml, otto_jobs, otto_version)
-        cmd = self.add_otto_cmd(otto_spec1)
+        otto_default = self.otto_spec(otto_yml, otto_jobs, otto_version)
+        cmd = self.add_otto_cmd(otto_default)
         cmd.params += [
             click.Argument(
                 param_decls=('remainder',),
@@ -164,17 +162,14 @@ class OttoParser:
         cmd.main(
             args=args or self.args,
             standalone_mode=False,
-            obj={},
         )
         cmd.add_help_option=True
-        #cmd.params = cmd.params[:-1]
         cmd.params = []
-        user_spec = otto_load(otto_yml=otto_spec1.otto.params.otto_yml.value)
-        user_spec.update(self.otto_spec(otto_yml, otto_jobs, otto_version))
-        cmd = self.add_cmd(user_spec, cmd=cmd)
+        otto_spec = otto_load(otto_yml=otto_default.otto.params.otto_yml.value)
+        otto_spec.update(self.otto_spec(otto_yml, otto_jobs, otto_version))
+        cmd = self.add_cmd(otto_spec, cmd=cmd)
         cmd.main(
             args=self.remainder,
             standalone_mode=False,
-            obj={},
         )
-        dbg(user_spec)
+        dbg(otto_spec)
