@@ -77,16 +77,19 @@ class OttoParser:
                     '--otto-yml': {
                         'metavar': 'PATH',
                         'default': otto_yml or self.otto_yml,
+                        'show_default': True,
                         'help': 'specifiy the yml file to use',
                     },
                     '--otto-jobs': {
                         'metavar': 'INT',
                         'default': otto_jobs or self.otto_jobs,
+                        'show_default': True,
                         'help': 'specify the number of processes to use',
                     },
                     '--otto-version': {
                         'metavar': 'INT',
                         'default': otto_version or self.otto_version,
+                        'show_default': True,
                         'help': 'specify the version of yml spec to use',
                     },
                 }
