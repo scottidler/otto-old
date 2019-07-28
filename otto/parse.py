@@ -14,7 +14,7 @@ from click import Option, Argument
 
 from otto.constants import *
 from otto.exceptions import ParamSpecError
-from otto.load import otto_load, OttoLoader
+from otto.load import otto_load
 
 from leatherman.dbg import dbg
 
@@ -56,10 +56,13 @@ class OttoParser:
         self.otto_jobs = otto_jobs or OTTO_JOBS
         self.otto_version = otto_version or OTTO_VERSION
         self.remainder = []
+        self.cmds = []
 
-    def callback(self, task):
+    def callback(self, name, task):
         def callback(*args, **kwargs):
             self.remainder = kwargs.pop('remainder', [])
+            if 'action' in task or 'actions' in task:
+                self.cmds += [name]
             for key, value in kwargs.items():
                 try:
                     task.params[key].value = value
@@ -112,25 +115,27 @@ class OttoParser:
         return click_params
 
     def add_otto_cmd(self, uid, task):
+        name = task.get('name', uid)
         cmd = click.Group(
-            task.get('name', uid),
+            name,
             chain=True,
             add_help_option=False,
             invoke_without_command=True,
-            callback=self.callback(task),
+            callback=self.callback(name, task),
         )
         cmd.params = self.add_params(task.params)
         return cmd
 
     def add_cmd(self, uid, task, cmd=None):
+        name = task.get('name', uid)
         if cmd is None:
             cmd = click.Command(
-                task.get('name', uid),
-                callback=self.callback(task),
+                name,
+                callback=self.callback(name, task),
             )
             cmd.params = []
         else:
-            cmd.callback = self.callback(task)
+            cmd.callback = self.callback(name, task)
         cmd.params = self.add_params(task.params)
         for subuid, subtask in task.tasks.items():
             subcmd = self.add_cmd(subuid, subtask)
@@ -172,4 +177,5 @@ class OttoParser:
             args=self.remainder,
             standalone_mode=False,
         )
-        dbg(otto_spec)
+        dbg(cmds=self.cmds)
+        return self.cmds, otto_spec

@@ -1,0 +1,3 @@
+[submodule "repos/doit"]
+	path = repos/doit
+	url = https://git@github.com/pydoit/doit
