@@ -58,11 +58,11 @@ class OttoParser:
         self.remainder = []
         self.cmds = []
 
-    def callback(self, name, task):
+    def callback(self, task):
         def callback(*args, **kwargs):
             self.remainder = kwargs.pop('remainder', [])
             if 'action' in task or 'actions' in task:
-                self.cmds += [name]
+                self.cmds += [task.name]
             for key, value in kwargs.items():
                 try:
                     task.params[key].value = value
@@ -102,6 +102,7 @@ class OttoParser:
             return 0 if 'otto' in x else 1
         for uid in sorted(params.keys(), key=otto_first):
             param = params.pop(uid)
+            param.name = param.get('name', uid)
             if '-' in uid:
                 decls = tuple(uid.split('|'))
                 ctor = Option
@@ -109,6 +110,7 @@ class OttoParser:
                 decls = (uid,)
                 ctor = Argument
                 param.pop('help', None)
+            param.pop('name', None)
             click_param = ctor(decls, **param)
             params[click_param.name] = Dict(
                 decls=decls,
@@ -118,27 +120,27 @@ class OttoParser:
         return click_params
 
     def add_otto_cmd(self, uid, task):
-        name = task.get('name', uid)
+        task.name = task.get('name', uid)
         cmd = click.Group(
-            name,
+            task.name,
             chain=True,
             add_help_option=False,
             invoke_without_command=True,
-            callback=self.callback(name, task),
+            callback=self.callback(task),
         )
         cmd.params = self.add_params(task.params)
         return cmd
 
     def add_cmd(self, uid, task, cmd=None):
-        name = task.get('name', uid)
+        task.name = task.get('name', uid)
         if cmd is None:
             cmd = click.Command(
-                name,
-                callback=self.callback(name, task),
+                task.name,
+                callback=self.callback(task),
             )
             cmd.params = []
         else:
-            cmd.callback = self.callback(name, task)
+            cmd.callback = self.callback(task)
         cmd.params = self.add_params(task.params)
         for subuid, subtask in task.tasks.items():
             subcmd = self.add_cmd(subuid, subtask)
@@ -180,5 +182,4 @@ class OttoParser:
             args=self.remainder,
             standalone_mode=False,
         )
-        dbg(cmds=self.cmds)
         return self.cmds, otto_spec

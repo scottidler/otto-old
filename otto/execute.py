@@ -2,6 +2,8 @@
 # -*- coding: utf-8 -*-
 import os
 import sys
+import errno
+
 sys.path.insert(0, os.path.dirname(__file__))
 from doit.task import dict_to_task
 from doit.doit_cmd import DoitMain
@@ -15,6 +17,14 @@ def otto_execute(cmds, spec):
     executor = OttoExecutor(cmds, spec)
     executor.execute()
 
+def mkdir_p(path):
+    try:
+        os.makedirs(path)
+    except OSError as ex:  # Python >2.5
+        if ex.errno == errno.EEXIST and os.path.isdir(path):
+            pass
+        else:
+            raise
 
 class OttoTaskLoader(TaskLoader2):
     def __init__(self, tasks):
@@ -29,16 +39,26 @@ class OttoTaskLoader(TaskLoader2):
         }
 
     def load_actions(self, task):
-        return [task.action] if 'action' in task else [] + task.get('actions', [])
+        actions = [task.action] if 'action' in task else [] + task.get('actions', [])
+        envs = ''.join([f'{param.get("name", uid)}={param.value} ' for uid, param in task.params.items()]).strip()
+        def create_action(i, action):
+            taskpath = f'.otto/{task.name}'
+            mkdir_p(taskpath)
+            with open(f'{taskpath}/action{i}', 'w') as f:
+                f.write(action)
+            return f'{envs} bash {taskpath}/action{i}'
+        return [
+            create_action(i, action) for i, action in enumerate(actions)
+        ]
 
     def load_tasks(self, cmd, pos_args):
         return [
-            dict(
+            dict_to_task(dict(
                 name=task.get('name', uid),
                 task_dep=task.get('deps', []),
                 actions=self.load_actions(task),
                 uptodate=task.get('uptodate', []),
-            ) for uid, task in self.tasks.items()
+            )) for uid, task in self.tasks.items()
         ]
 
 class OttoExecutor:
@@ -47,9 +67,8 @@ class OttoExecutor:
         self.spec = spec
 
     def execute(self, cmds=None, spec=None):
-        cmds_ = cmds or self.cmds
-        spec_ = spec or self.spec
-        loader = OttoTaskLoader(spec_.otto.tasks)
-        if len(cmds_) > 1:
-            dbg(cmds_)
-            sys.exit(DoitMain(loader).run(cmds_))
+        cmds = cmds or self.cmds
+        spec = spec or self.spec
+        loader = OttoTaskLoader(spec.otto.tasks)
+        if len(cmds) > 1:
+            sys.exit(DoitMain(loader).run(cmds))
