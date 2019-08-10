@@ -40,7 +40,8 @@ class OttoTaskLoader(TaskLoader2):
 
     def load_actions(self, task):
         actions = [task.action] if 'action' in task else [] + task.get('actions', [])
-        envs = ''.join([f'{param.get("name", uid)}={param.value} ' for uid, param in task.params.items()]).strip()
+        dbg(params=task.params)
+        envs = ''.join([f'{param.name}={param.value} ' for uid, param in task.params.items()]).strip()
         def create_action(i, action):
             taskpath = f'.otto/{task.name}'
             mkdir_p(taskpath)

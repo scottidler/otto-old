@@ -102,7 +102,7 @@ class OttoParser:
             return 0 if 'otto' in x else 1
         for uid in sorted(params.keys(), key=otto_first):
             param = params.pop(uid)
-            param.name = param.get('name', uid)
+            param_name = param.get('name', None)
             if '-' in uid:
                 decls = tuple(uid.split('|'))
                 ctor = Option
@@ -110,10 +110,10 @@ class OttoParser:
                 decls = (uid,)
                 ctor = Argument
                 param.pop('help', None)
-            param.pop('name', None)
             click_param = ctor(decls, **param)
             params[click_param.name] = Dict(
                 decls=decls,
+                name=param_name or click_param.name,
                 **param,
             )
             click_params += [click_param]
