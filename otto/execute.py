@@ -40,7 +40,6 @@ class OttoTaskLoader(TaskLoader2):
 
     def load_actions(self, task):
         actions = [task.action] if 'action' in task else [] + task.get('actions', [])
-        dbg(params=task.params)
         envs = ''.join([f'{param.name}={param.value} ' for uid, param in task.params.items()]).strip()
         def create_action(i, action):
             taskpath = f'.otto/{task.name}'
@@ -71,5 +70,4 @@ class OttoExecutor:
         cmds = cmds or self.cmds
         spec = spec or self.spec
         loader = OttoTaskLoader(spec.otto.tasks)
-        if len(cmds) > 1:
-            sys.exit(DoitMain(loader).run(cmds))
+        sys.exit(DoitMain(loader).run(cmds))

@@ -10,6 +10,7 @@ from otto.constants import *
 from otto.exceptions import OttoYmlLoadError
 from otto.task import OttoParam, OttoTask
 
+from leatherman.dbg import dbg
 
 def otto_load(otto_yml=OTTO_YML):
     loader = OttoLoader(otto_yml)
