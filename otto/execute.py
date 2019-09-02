@@ -70,4 +70,5 @@ class OttoExecutor:
         cmds = cmds or self.cmds
         spec = spec or self.spec
         loader = OttoTaskLoader(spec.otto.tasks)
-        sys.exit(DoitMain(loader).run(cmds))
+        if cmds:
+            sys.exit(DoitMain(loader).run(cmds))

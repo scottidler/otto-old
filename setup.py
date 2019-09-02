@@ -3,16 +3,23 @@
 
 from setuptools import setup, find_packages
 
-with open("README.md", "r") as f:
+with open('README.md') as f:
     long_description = f.read()
 
-requirements = ['attrdict', 'ruamel.yaml']
+with open('requirements.txt') as f:
+    app_requirements = f.read().splitlines()
 
-setup_requirements = ['pytest-runner', 'setuptools>=40.5.0']
+with open('tests/requirements.txt') as f:
+    test_requirements = f.read().splitlines()
 
-test_requirements = ['pytest', 'pytest-cov', 'pytest-mock', 'pytest-watch']
+setup_requirements = [
+    'pytest-runner',
+    'setuptools>=40.5.0'
+]
 
-extras = {'test': test_requirements}
+extras = {
+    'test': test_requirements
+}
 
 setup(
     name='otto',
@@ -27,13 +34,17 @@ setup(
         'License :: OSI Approved :: MIT',
         'Operating System :: OS Independent',
     ),
-    install_requires=requirements,
     license='MIT',
     include_package_data=True,
     packages=find_packages(include=['otto']),
+    entry_points='''
+    [console_scripts]
+    otto=otto.cli:main
+    ''',
+    install_requires=app_requirements,
     setup_requires=setup_requirements,
-    test_suite='tests',
     tests_require=test_requirements,
+    test_suite='tests',
     extras_require=extras,
     zip_safe=False,
 )

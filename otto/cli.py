@@ -6,6 +6,9 @@ from otto.execute import otto_execute
 
 from leatherman.dbg import dbg
 
-if __name__ == '__main__':
+def main():
     cmds, spec = otto_parse()
     otto_execute(cmds, spec)
+
+if __name__ == '__main__':
+    main()
