@@ -9,8 +9,6 @@ from doit.task import dict_to_task
 from doit.doit_cmd import DoitMain
 from doit.cmd_base import TaskLoader2
 
-from otto.parse import otto_parse
-
 from leatherman.dbg import dbg
 
 def otto_execute(cmds, spec):
@@ -30,6 +28,9 @@ class OttoTaskLoader(TaskLoader2):
     def __init__(self, tasks):
         self.tasks = tasks
 
+    def __repr__(self):
+        return f'OttoTaskLoader(tasks={self.tasks})'
+
     def setup(self, opt_values):
         pass
 
@@ -39,14 +40,20 @@ class OttoTaskLoader(TaskLoader2):
         }
 
     def load_actions(self, task):
+        def create_param(param):
+            value = param.value
+            if isinstance(param.value, (tuple, list)):
+                value = ' '.join(param.value)
+            return f'{param.name}="{value}"'
+        envs = ' '.join([create_param(param) for uid, param in task.params.items()]).strip()
         actions = [task.action] if 'action' in task else [] + task.get('actions', [])
-        envs = ''.join([f'{param.name}={param.value} ' for uid, param in task.params.items()]).strip()
         def create_action(i, action):
             taskpath = f'.otto/{task.name}'
             mkdir_p(taskpath)
             with open(f'{taskpath}/action{i}', 'w') as f:
                 f.write(action)
-            return f'{envs} bash {taskpath}/action{i}'
+            action = f'env {envs} bash {taskpath}/action{i}'
+            return action
         return [
             create_action(i, action) for i, action in enumerate(actions)
         ]
@@ -69,6 +76,9 @@ class OttoExecutor:
     def execute(self, cmds=None, spec=None):
         cmds = cmds or self.cmds
         spec = spec or self.spec
-        loader = OttoTaskLoader(spec.otto.tasks)
+        if spec.otto.tasks:
+            loader = OttoTaskLoader(spec.otto.tasks)
+        else:
+            loader = OttoTaskLoader({'tasks': spec.otto})
         if cmds:
             sys.exit(DoitMain(loader).run(cmds))
