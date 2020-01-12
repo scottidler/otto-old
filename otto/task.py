@@ -32,7 +32,13 @@ class OttoParam:
         self.kwargs = kwargs
 
     def __repr__(self):
-        return f'OttoParam(name={self.name}, value={self.value} args={self.args}, kwargs={self.kwargs})'
+        fields = ', '.join([
+            f'name={self.name}',
+            f'value={self.value}',
+            f'args={self.args}',
+            f'kwargs={self.args}',
+        ])
+        return f'OttoParam({fields})'
 
     __str__ = __repr__
 
@@ -52,17 +58,15 @@ class OttoTask:
         self.tasks = tasks or {}
 
     def __repr__(self):
-        fields = ', '.join(
-            [
-                f'name={self.name}',
-                f'actions={self.actions}',
-                f'deps={self.deps}',
-                f'uptodate={self.uptodate}',
-                f'desc="{self.desc}"',
-                f'params={self.params}',
-                f'tasks={self.tasks}',
-            ]
-        )
+        fields = ', '.join([
+            f'name={self.name}',
+            f'actions={self.actions}',
+            f'deps={self.deps}',
+            f'uptodate={self.uptodate}',
+            f'desc="{self.desc}"',
+            f'params={self.params}',
+            f'tasks={self.tasks}',
+        ])
         return f'OttoTask({fields})'
 
     __str__ = __repr__
