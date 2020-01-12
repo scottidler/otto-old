@@ -10,5 +10,5 @@ otto:
       help: list of ponies
   action: |
     #!/bin/bash
-    echo "name=$name age=$arg"
-    echo "ponies=?"
+    echo "name=$name age=$age"
+    echo "ponies=\"$ponies\""
