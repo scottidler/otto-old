@@ -2,9 +2,13 @@ otto:
   version: 1
   tasks:
     hello:
+      params:
+        -g|--greeting:
+          default: hello
+          help: default="hello"; override greeting
       action: |
         #!/bin/bash
-        echo "hello"
+        echo "${greeting:-hello}"
       desc: hello task
     world:
       deps:
