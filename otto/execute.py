@@ -9,6 +9,7 @@ from doit.task import dict_to_task
 from doit.doit_cmd import DoitMain
 from doit.cmd_base import TaskLoader2
 
+from leatherman.repr import __repr__
 from leatherman.dbg import dbg
 
 def otto_execute(cmds, spec):
@@ -28,8 +29,7 @@ class OttoTaskLoader(TaskLoader2):
     def __init__(self, tasks):
         self.tasks = tasks
 
-    def __repr__(self):
-        return f'OttoTaskLoader(tasks={self.tasks})'
+    __repr__ = __repr__
 
     def setup(self, opt_values):
         pass
@@ -72,6 +72,8 @@ class OttoExecutor:
     def __init__(self, cmds, spec):
         self.cmds = cmds
         self.spec = spec
+
+    __repr__ = __repr__
 
     def execute(self, cmds=None, spec=None):
         cmds = cmds or self.cmds

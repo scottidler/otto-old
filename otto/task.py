@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from leatherman.repr import __repr__
+
 class NotSet():
     def __repr__(self):
         return 'NotSet'
@@ -31,14 +33,7 @@ class OttoParam:
         self.value = value
         self.kwargs = kwargs
 
-    def __repr__(self):
-        fields = ', '.join([
-            f'name={self.name}',
-            f'value={self.value}',
-            f'args={self.args}',
-            f'kwargs={self.args}',
-        ])
-        return f'OttoParam({fields})'
+    __repr__ = __repr__
 
     __str__ = __repr__
 
@@ -57,16 +52,6 @@ class OttoTask:
         self.params = params or {}
         self.tasks = tasks or {}
 
-    def __repr__(self):
-        fields = ', '.join([
-            f'name={self.name}',
-            f'actions={self.actions}',
-            f'deps={self.deps}',
-            f'uptodate={self.uptodate}',
-            f'desc="{self.desc}"',
-            f'params={self.params}',
-            f'tasks={self.tasks}',
-        ])
-        return f'OttoTask({fields})'
+    __repr__ = __repr__
 
     __str__ = __repr__

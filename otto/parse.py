@@ -16,6 +16,7 @@ from otto.constants import *
 from otto.exceptions import ParamSpecError
 from otto.load import otto_load
 
+from leatherman.repr import __repr__
 from leatherman.dbg import dbg
 
 
@@ -57,6 +58,8 @@ class OttoParser:
         self.otto_version = otto_version or OTTO_VERSION
         self.remainder = []
         self.cmds = []
+
+    __repr__ = __repr__
 
     def callback(self, task):
         def callback(*args, **kwargs):
