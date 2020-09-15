@@ -1,10 +1,10 @@
-use std::fs::File;
-use std::io::Read;
+use std::fs;
 
 #[allow(unused_imports)]
 use clap::{App, Arg, Subcommand};
 
 use std::fmt;
+use std::env;
 use std::vec::Vec;
 use serde::Deserialize;
 use serde::de::{Deserializer, Visitor, MapAccess};
@@ -140,58 +140,10 @@ where
 }
 
 fn main() {
-    /*
-    let matches = App::new("MyApp")
-        // Normal App and Arg configuration goes here...
-        // In the following example assume we wanted an application which
-        // supported an "add" subcommand, this "add" subcommand also took
-        // one positional argument of a file to add:
-        .subcommand(
-            App::new("add") // The name we call argument with
-                .about("Adds files to myapp") // The message displayed in "myapp -h"
-                // or "myapp help"
-                .version("0.1") // Subcommands can have independent version
-                .author("Kevin K.") // And authors
-		.arg(
-		    Arg::with_name("awesome")
-			.about("turns up the awesome") // Displayed when showing help info
-			.short('a') // Trigger this arg with "-a"
-			.long("awesome") // Trigger this arg with "--awesome"
-			.multiple(true) // This flag should allow multiple
-			// occurrences such as "-aaa" or "-a -a"
-		)
-        )
-        .subcommand(
-            App::new("sub") // The name we call argument with
-                .about("Subs files to myapp") // The message displayed in "myapp -h"
-                // or "myapp help"
-                .version("0.1") // Subcommands can have independent version
-                .author("Kevin K.") // And authors
-		.arg(
-		    Arg::with_name("radical")
-			.about("turns up the radical") // Displayed when showing help info
-			.short('r') // Trigger this arg with "-a"
-			.long("radical") // Trigger this arg with "--awesome"
-			.multiple(true) // This flag should allow multiple
-			// occurrences such as "-aaa" or "-a -a"
-		)
-        )
-        .get_matches();
-
-    println!("{:?}", matches);
-    println!();
-*/
-    let filename = "examples/ex1.yml";
-    match File::open(filename) {
-        Ok(mut file) => {
-            let mut content = String::new();
-            file.read_to_string(&mut content).unwrap();
-
-            let spec: Spec = serde_yaml::from_str(&content).unwrap();
-            println!("{:#?}", spec);
-        }
-        Err(error) => {
-            println!("There is an error {}: {}", filename, error);
-        }
-    }
+    let args: Vec<String> = env::args().skip(1).collect();
+    println!("args ={:?}", args);
+    let filename  = "examples/ex1.yml";
+    let content = fs::read_to_string(filename).unwrap_or_else(|_| panic!("Can't load filename:{:?}", filename));
+    let spec: Spec = serde_yaml::from_str(&content).unwrap_or_else(|_| panic!("Can't load content:{:?}", content));
+    println!("{:#?}", spec);
 }
