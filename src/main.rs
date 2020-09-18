@@ -8,6 +8,7 @@ use std::env;
 use std::vec::Vec;
 use serde::Deserialize;
 use serde::de::{Deserializer, Visitor, MapAccess};
+use anyhow::{Context,Result};
 
 fn default_otto() -> String {
     "otto".to_string()
@@ -139,11 +140,19 @@ where
     deserializer.deserialize_map(TaskMap)
 }
 
-fn main() {
+fn otto() -> Result<()> {
     let args: Vec<String> = env::args().skip(1).collect();
-    println!("args ={:?}", args);
-    let filename  = "examples/ex1.yml";
-    let content = fs::read_to_string(filename).unwrap_or_else(|_| panic!("Can't load filename:{:?}", filename));
-    let spec: Spec = serde_yaml::from_str(&content).unwrap_or_else(|_| panic!("Can't load content:{:?}", content));
+    println!("args = {:?}", args);
+    let filename = "examples/ex1.yml";
+    let content = fs::read_to_string(filename).context(format!("Can't load filename={:?}", filename))?;
+    let spec: Spec = serde_yaml::from_str(&content).context(format!("Can't load content={:?}", content))?;
     println!("{:#?}", spec);
+    Ok(())
+}
+
+fn main() {
+    if let Err(err) = otto() {
+        eprintln!("Error: {:?}", err);
+        std::process::exit(1);
+    }
 }
