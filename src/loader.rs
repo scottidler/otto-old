@@ -1,8 +1,4 @@
 use std::fs;
-
-#[allow(unused_imports)]
-use clap::{App, Arg, Subcommand};
-
 use std::fmt;
 use std::vec::Vec;
 use serde::Deserialize;
@@ -13,6 +9,10 @@ fn default_otto() -> String {
     "otto".to_string()
 }
 
+fn default_verbosity() -> i32 {
+    1
+}
+
 fn default_version() -> i32 {
     1
 }
@@ -21,64 +21,118 @@ fn default_jobs() -> i32 {
     12
 }
 
-#[derive(Debug, PartialEq, Deserialize)]
-struct Spec {
-    otto: Otto,
-}
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct Defaults {
+    #[serde(default = "default_otto")]
+    pub name: String,
 
-#[derive(Debug, PartialEq, Deserialize)]
-struct Otto {
+    #[serde(default = "default_verbosity")]
+    pub verbosity: i32,
+
     #[serde(default = "default_version")]
-    version: i32,
+    pub version: i32,
 
     #[serde(default = "default_jobs")]
-    jobs: i32,
+    pub jobs: i32,
 
-    #[serde(default = "default_otto")]
-    name: String,
+    #[serde(default)]
+    pub tasks: Vec<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct Spec {
+    pub defaults: Defaults,
 
     #[serde(default, deserialize_with = "de_param_map")]
-    params: Vec<Param>,
+    pub params: Vec<Param>,
 
-    action: Option<String>,
+    pub action: Option<String>,
 
     #[serde(deserialize_with = "de_task_map")]
-    tasks: Vec<Task>,
+    pub tasks: Vec<Task>,
 }
 
-#[derive(Debug, PartialEq, Deserialize)]
-struct Param {
-    #[serde(skip_deserializing)]
-    name: String,
-
-    #[serde(default)]
-    metavar: Option<String>,
-
-    #[serde(default)]
-    default: Option<String>,
-
-    #[serde(default)]
-    constant: Option<String>,
-
-    #[serde(default)]
-    choices: Option<String>, //FIXME: is this correct? probably not
-
-    #[serde(default)]
-    nargs: Option<String>,
-
-    #[serde(default)]
-    help: Option<String>,
+impl Spec {
+    pub fn task_names(&self) -> Vec<String> {
+        self.tasks
+            .clone()
+            .into_iter()
+            .map(|t| t.name)
+            .collect()
+    }
+    /*
+    pub fn task_names_and_helps(&self) -> Vec<(String, String)> {
+        self.tasks
+            .clone()
+            .into_iter()
+            .map(|t| (t.name.clone(), t.help.clone()))
+            .collect()
+    }
+    */
+    pub fn task_names_and_helps(&self) -> Vec<(String, String)> {
+        self.tasks
+            .clone()
+            .into_iter()
+            .map(|t| (t.name, t.help))
+            .collect()
+    }
 }
 
-#[derive(Default, Debug, PartialEq, Deserialize)]
-struct Task {
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct Param {
     #[serde(skip_deserializing)]
-    name: String,
+    pub name: String,
+
+    #[serde(default)]
+    pub dest: Option<String>,
+
+    #[serde(default)]
+    pub metavar: Option<String>,
+
+    #[serde(default)]
+    pub default: Option<String>,
+
+    #[serde(default)]
+    pub constant: Option<String>,
+
+    #[serde(default)]
+    pub choices: Option<String>, //FIXME: is this correct? probably not
+
+    #[serde(default)]
+    pub nargs: Option<String>,
+
+    #[serde(default)]
+    pub help: Option<String>,
+}
+
+#[derive(Default, Clone, Debug, PartialEq, Deserialize)]
+pub struct Task {
+    #[serde(skip_deserializing)]
+    pub name: String,
+
+    #[serde(default)]
+    pub help: String,
 
     #[serde(default, deserialize_with = "de_param_map")]
-    params: Vec<Param>,
+    pub params: Vec<Param>,
 
-    action: String,
+    #[serde(default)]
+    pub after: Vec<String>,
+
+    #[serde(default)]
+    pub before: Vec<String>,
+
+    pub action: String,
+}
+
+impl Task {
+    pub fn param_names(&self) -> Vec<String> {
+        self.params
+            .clone()
+            .into_iter()
+            .map(|p| p.name)
+            .collect()
+    }
 }
 
 fn de_param_map<'de, D>(deserializer: D) -> Result<Vec<Param>, D::Error>
@@ -100,7 +154,17 @@ where
         {
             let mut params = Vec::new();
             while let Some((name, mut param)) = map.next_entry::<String, Param>()? {
+                // set the param.name as the parent of the param
                 param.name = name;
+                // set the default param.dest based upon the param.name
+                if param.dest.is_none() {
+                    let dest = param.name
+                        .split('|')
+                        .last()
+                        .unwrap()
+                        .trim_matches('-');
+                    param.dest = Some(String::from(dest));
+                }
                 params.push(param);
             }
             Ok(params)
@@ -139,9 +203,8 @@ where
     deserializer.deserialize_map(TaskMap)
 }
 
-pub fn load(filename: &str) -> Result<()> {
+pub fn load(filename: &str) -> Result<Spec, anyhow::Error> {
     let content = fs::read_to_string(filename).context(format!("Can't load filename={:?}", filename))?;
     let spec: Spec = serde_yaml::from_str(&content).context(format!("Can't load content={:?}", content))?;
-    println!("{:#?}", spec);
-    Ok(())
+    Ok(spec)
 }
