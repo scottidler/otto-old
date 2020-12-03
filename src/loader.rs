@@ -53,27 +53,16 @@ pub struct Spec {
 }
 
 impl Spec {
-    pub fn task_names(&self) -> Vec<String> {
-        self.tasks
-            .clone()
-            .into_iter()
-            .map(|t| t.name)
+    pub fn task_names(&self) -> Vec<&str> {
+        return self.tasks
+            .iter()
+            .map(|t| t.name.as_str())
             .collect()
     }
-    /*
-    pub fn task_names_and_helps(&self) -> Vec<(String, String)> {
+    pub fn task_names_and_helps(&self) -> Vec<(&str, &str)> {
         self.tasks
-            .clone()
-            .into_iter()
-            .map(|t| (t.name.clone(), t.help.clone()))
-            .collect()
-    }
-    */
-    pub fn task_names_and_helps(&self) -> Vec<(String, String)> {
-        self.tasks
-            .clone()
-            .into_iter()
-            .map(|t| (t.name, t.help))
+            .iter()
+            .map(|t| (t.name.as_str(), t.help.as_str()))
             .collect()
     }
 }

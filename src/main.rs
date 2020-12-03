@@ -32,7 +32,7 @@ fn main() {
     let task_names_and_helps = spec.task_names_and_helps();
     let mut subcommands: Vec<App> = vec![];
     for (name, help) in task_names_and_helps {
-        let app = App::new(name).about(&*help);
+        let app = App::new(name).about(help);
         subcommands.push(app);
     }
     /*
