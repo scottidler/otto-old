@@ -35,14 +35,6 @@ fn main() {
         let app = App::new(name).about(help);
         subcommands.push(app);
     }
-    /*
-    let names_and_helps = spec.task_names_and_helps();
-    let subcommands: Vec<App> = names_and_helps
-        .clone()
-        .into_iter()
-        .map(|(n,h)| App::new(n).about(&*h))
-        .collect();
-    */
     println!("subcommands={:#?}", subcommands);
 
     let app = App::new("otto")
@@ -56,10 +48,5 @@ fn main() {
             .default_value("otto.yml")
             .about("specfile to drive otto"))
         .subcommands(subcommands);
-    /*
-    for name in spec.task_names() {
-        app.subcommand(App::new(name).about("info about the subcommand"));
-    }
-    */
     let matches = app.get_matches();
 }
