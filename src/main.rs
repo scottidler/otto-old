@@ -5,19 +5,6 @@ use clap::{Arg, App, Subcommand};
 
 mod loader;
 
-#[derive(Debug, PartialEq)]
-pub struct Otto {
-    specfile: PathBuf,
-}
-
-impl Otto {
-    pub fn new(specfile: &PathBuf) -> Self {
-        Self {
-            specfile: PathBuf::from(specfile),
-        }
-    }
-}
-
 fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
     let verbose = true;
@@ -25,18 +12,17 @@ fn main() {
         info!("args = {:?}", args);
         warn!("hi");
     }
-    let filename = "examples/ex1.yml";
-    let spec = loader::load(filename).unwrap();
-
-    let s1 = String::from("s1".to_string());
-    let task_names_and_helps = spec.task_names_and_helps();
-    let mut subcommands: Vec<App> = vec![];
-    for (name, help) in task_names_and_helps {
-        let app = App::new(name).about(help);
-        subcommands.push(app);
-    }
-    println!("subcommands={:#?}", subcommands);
-
+    let filename = match args.first() {
+        Some(s) => s,
+        None => "examples/ex1.yml",
+    };
+    let otto = loader::load(filename).unwrap();
+    println!("otto={:#?}", otto);
+    /*
+    let subcommands: Vec<App> = otto.task_names_and_helps()
+        .iter()
+        .map(|(n,h)| App::new(*n).about(*h))
+        .collect();
     let app = App::new("otto")
         .version("v0.0.1")
         .author("Scott A. Idler <scott.a.idler@gmail.com>")
@@ -49,4 +35,5 @@ fn main() {
             .about("specfile to drive otto"))
         .subcommands(subcommands);
     let matches = app.get_matches();
+    */
 }

@@ -21,38 +21,32 @@ fn default_jobs() -> i32 {
     12
 }
 
+#[derive(Debug, PartialEq, Deserialize)]
+pub struct Spec {
+    pub otto: Otto,
+}
+
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-pub struct Defaults {
+pub struct Otto {
+
     #[serde(default = "default_otto")]
     pub name: String,
-
-    #[serde(default = "default_verbosity")]
-    pub verbosity: i32,
 
     #[serde(default = "default_version")]
     pub version: i32,
 
-    #[serde(default = "default_jobs")]
-    pub jobs: i32,
-
-    #[serde(default)]
-    pub tasks: Vec<String>,
-}
-
-#[derive(Debug, Clone, PartialEq, Deserialize)]
-pub struct Spec {
-    pub defaults: Defaults,
+    pub defaults: Option<Defaults>,
 
     #[serde(default, deserialize_with = "de_param_map")]
     pub params: Vec<Param>,
 
     pub action: Option<String>,
 
-    #[serde(deserialize_with = "de_task_map")]
+    #[serde(default, deserialize_with = "de_task_map")]
     pub tasks: Vec<Task>,
 }
 
-impl Spec {
+impl Otto {
     pub fn task_names(&self) -> Vec<&str> {
         return self.tasks
             .iter()
@@ -65,6 +59,18 @@ impl Spec {
             .map(|t| (t.name.as_str(), t.help.as_str()))
             .collect()
     }
+}
+
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+pub struct Defaults {
+    #[serde(default = "default_verbosity")]
+    pub verbosity: i32,
+
+    #[serde(default = "default_jobs")]
+    pub jobs: i32,
+
+    #[serde(default)]
+    pub tasks: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
@@ -85,7 +91,7 @@ pub struct Param {
     pub constant: Option<String>,
 
     #[serde(default)]
-    pub choices: Option<String>, //FIXME: is this correct? probably not
+    pub choices: Vec<String>,
 
     #[serde(default)]
     pub nargs: Option<String>,
@@ -111,7 +117,7 @@ pub struct Task {
     #[serde(default)]
     pub before: Vec<String>,
 
-    pub action: String,
+    pub action: Option<String>,
 }
 
 impl Task {
@@ -192,8 +198,8 @@ where
     deserializer.deserialize_map(TaskMap)
 }
 
-pub fn load(filename: &str) -> Result<Spec, anyhow::Error> {
+pub fn load(filename: &str) -> Result<Otto, anyhow::Error> {
     let content = fs::read_to_string(filename).context(format!("Can't load filename={:?}", filename))?;
     let spec: Spec = serde_yaml::from_str(&content).context(format!("Can't load content={:?}", content))?;
-    Ok(spec)
+    Ok(spec.otto)
 }

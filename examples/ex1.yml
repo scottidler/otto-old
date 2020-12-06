@@ -1,25 +1,26 @@
-version: 1
-defaults:
-  entry:
-  - world
-tasks:
-  hello:
-    params:
-      -g|--greeting:
-        default: hello
-        help: default="hello"; override greeting
-    action: |
-      #!/bin/bash
-      echo "${greeting:-hello}"
-    help: hello task
-  world:
-    before:
+otto:
+  version: 1
+  defaults:
+    tasks:
+    - world
+  tasks:
+    hello:
+      params:
+        -g|--greeting:
+          default: hello
+          help: default="hello"; override greeting
+      action: |
+        #!/bin/bash
+        echo "${greeting:-hello}"
+      help: hello task
+    world:
+      before:
       - hello
-    params:
-      -n|--name:
-        default: world
-        help: default="world"; override name
-    action: |
-      #!/bin/bash
-      echo "$name"
-    help: world task
+      params:
+        -n|--name:
+          default: world
+          help: default="world"; override name
+      action: |
+        #!/bin/bash
+        echo "$name"
+      help: world task
