@@ -1,6 +1,10 @@
 use std::fs;
 use std::fmt;
-use anyhow::{Context,Result};
+use anyhow::{
+    Context,
+    Result,
+    Error,
+};
 
 use super::spec::{
     Spec,
@@ -19,7 +23,7 @@ impl Loader {
         }
     }
 
-    pub fn load(&self, filename: &str) -> Result<Otto, anyhow::Error> {
+    pub fn load(&self, filename: &str) -> Result<Otto, Error> {
         let content = fs::read_to_string(filename).context(format!("Can't load filename={:?}", filename))?;
         let spec: Spec = serde_yaml::from_str(&content).context(format!("Can't load content={:?}", content))?;
         Ok(spec.otto)
