@@ -1,4 +1,3 @@
-use std::fs;
 use std::fmt;
 use std::vec::Vec;
 use serde::Deserialize;
@@ -198,8 +197,3 @@ where
     deserializer.deserialize_map(TaskMap)
 }
 
-pub fn load(filename: &str) -> Result<Otto, anyhow::Error> {
-    let content = fs::read_to_string(filename).context(format!("Can't load filename={:?}", filename))?;
-    let spec: Spec = serde_yaml::from_str(&content).context(format!("Can't load content={:?}", content))?;
-    Ok(spec.otto)
-}

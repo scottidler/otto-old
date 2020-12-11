@@ -1,23 +1,47 @@
 use std::env;
 use log::{info,warn};
+/*
 use std::path::{Path, PathBuf};
 use clap::{Arg, App, Subcommand};
+*/
 
-mod loader;
+pub mod cli;
+pub mod cfg;
+
+use cfg::loader::Loader;
+use cli::lexer::Lexer;
+
 
 fn main() {
     let args: Vec<String> = env::args().skip(1).collect();
+    println!("args: {:#?}", args);
+
     let verbose = true;
     if verbose {
         info!("args = {:?}", args);
         warn!("hi");
     }
+
+    /*
     let filename = match args.first() {
         Some(s) => s,
         None => "examples/ex1.yml",
     };
-    let otto = loader::load(filename).unwrap();
-    println!("otto={:#?}", otto);
+    */
+
+    let filename = "examples/ex1.yml";
+    let loader = Loader::new();
+    println!("loader: {:#?}", loader);
+
+    let otto = loader.load(filename).unwrap();
+    println!("otto: {:#?}", otto);
+
+    let lexer = Lexer::new();
+    println!("lexer: {:#?}", lexer);
+
+    let tokens = lexer.tokenize(args);
+    println!("tokens: {:#?}", tokens);
+
     /*
     let subcommands: Vec<App> = otto.task_names_and_helps()
         .iter()
