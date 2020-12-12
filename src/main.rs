@@ -10,6 +10,7 @@ pub mod cfg;
 
 use cfg::loader::Loader;
 use cli::lexer::Lexer;
+use cli::parser::Parser;
 
 
 fn main() {
@@ -42,10 +43,15 @@ fn main() {
     let tokens = lexer.tokenize(args);
     println!("tokens: {:#?}", tokens);
 
+    let parser = Parser::new(otto);
+    println!("parser: {:#?}", parser);
+
+    let parsed = parser.parse(tokens);
+    println!("parsed: {:#?}", parsed);
+
     /*
     let subcommands: Vec<App> = otto.task_names_and_helps()
-        .iter()
-        .map(|(n,h)| App::new(*n).about(*h))
+        .map(|(n,h)| App::new(n).about(h))
         .collect();
     let app = App::new("otto")
         .version("v0.0.1")
