@@ -1,8 +1,8 @@
-otto:
+defaults:
   version: 1
-  defaults:
-    tasks:
-    - world
+  tasks:
+  - world
+otto:
   tasks:
     hello:
       params:

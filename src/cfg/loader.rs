@@ -8,7 +8,6 @@ use anyhow::{
 
 use super::spec::{
     Spec,
-    Otto,
     Task,
     Param,
 };
@@ -23,9 +22,9 @@ impl Loader {
         }
     }
 
-    pub fn load(&self, filename: &str) -> Result<Otto, Error> {
+    pub fn load(&self, filename: &str) -> Result<Spec, Error> {
         let content = fs::read_to_string(filename).context(format!("Can't load filename={:?}", filename))?;
         let spec: Spec = serde_yaml::from_str(&content).context(format!("Can't load content={:?}", content))?;
-        Ok(spec.otto)
+        Ok(spec)
     }
 }

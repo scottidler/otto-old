@@ -26,30 +26,16 @@ fn default_jobs() -> i32 {
 
 #[derive(Debug, PartialEq, Deserialize)]
 pub struct Spec {
-    pub otto: Otto,
+    pub defaults: Option<Defaults>,
+
+    pub otto: Task,
 }
 
 #[derive(Debug, Clone, PartialEq, Deserialize)]
-pub struct Otto {
-
-    #[serde(default = "default_otto")]
-    pub name: String,
-
+pub struct Defaults {
     #[serde(default = "default_version")]
     pub version: i32,
 
-    pub defaults: Option<Defaults>,
-
-    #[serde(default, deserialize_with = "deserialize_param_map")]
-    pub params: Params,
-
-    #[serde(default, deserialize_with = "deserialize_task_map")]
-    pub tasks: Tasks,
-
-    pub action: Option<String>,
-}
-#[derive(Debug, Clone, PartialEq, Deserialize)]
-pub struct Defaults {
     #[serde(default = "default_verbosity")]
     pub verbosity: i32,
 

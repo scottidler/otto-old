@@ -34,8 +34,8 @@ fn main() {
     let loader = Loader::new();
     println!("loader: {:#?}", loader);
 
-    let otto = loader.load(filename).unwrap();
-    println!("otto: {:#?}", otto);
+    let spec = loader.load(filename).unwrap();
+    println!("spec.otto: {:#?}", spec.otto);
 
     let lexer = Lexer::new();
     println!("lexer: {:#?}", lexer);
@@ -43,7 +43,7 @@ fn main() {
     let tokens = lexer.tokenize(args);
     println!("tokens: {:#?}", tokens);
 
-    let parser = Parser::new(otto);
+    let parser = Parser::new(spec.otto);
     println!("parser: {:#?}", parser);
 
     let parsed = parser.parse(tokens);
