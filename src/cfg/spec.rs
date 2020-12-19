@@ -1,9 +1,9 @@
+use anyhow::{Context, Result};
+use serde::de::{Deserializer, MapAccess, Visitor};
+use serde::Deserialize;
+use std::collections::HashMap;
 use std::fmt;
 use std::vec::Vec;
-use std::collections::HashMap;
-use serde::Deserialize;
-use serde::de::{Deserializer, Visitor, MapAccess};
-use anyhow::{Context,Result};
 
 type Tasks = HashMap<String, Task>;
 type Params = HashMap<String, Param>;
@@ -24,14 +24,14 @@ fn default_jobs() -> i32 {
     12
 }
 
-#[derive(Debug, PartialEq, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 pub struct Spec {
     pub defaults: Option<Defaults>,
 
     pub otto: Task,
 }
 
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 pub struct Defaults {
     #[serde(default = "default_version")]
     pub version: i32,
@@ -47,7 +47,7 @@ pub struct Defaults {
 }
 
 // FIXME: Flag, Named and Positional Args
-#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 pub struct Param {
     #[serde(skip_deserializing)]
     pub name: String,
@@ -83,7 +83,7 @@ pub struct Param {
     pub help: Option<String>,
 }
 
-#[derive(Default, Clone, Debug, PartialEq, Deserialize)]
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 pub struct Task {
     #[serde(skip_deserializing)]
     pub name: String,
@@ -104,6 +104,9 @@ pub struct Task {
     pub tasks: Tasks,
 
     pub action: Option<String>,
+
+    #[serde(skip_deserializing)]
+    pub selected: bool,
 }
 
 fn deserialize_param_map<'de, D>(deserializer: D) -> Result<Params, D::Error>
@@ -125,16 +128,15 @@ where
         {
             let mut params = Params::new();
             while let Some((name, mut param)) = map.next_entry::<String, Param>()? {
-                let flags: Vec<String> = name
-                    .split('|')
-                    .map(|i| i.to_string())
-                    .collect();
-                param.short = flags.clone()
+                let flags: Vec<String> = name.split('|').map(|i| i.to_string()).collect();
+                param.short = flags
+                    .clone()
                     .into_iter()
                     .filter(|i| i.starts_with("-") && i.len() == 2)
                     .map(|i| i.to_string())
                     .collect();
-                param.long = flags.clone()
+                param.long = flags
+                    .clone()
                     .into_iter()
                     .filter(|i| i.starts_with("--") && i.len() > 2)
                     .map(|i| i.to_string())
@@ -142,12 +144,10 @@ where
                 if param.dest.is_none() {
                     let dest = match param.long.first() {
                         Some(l) => String::from(l.trim_matches('-')),
-                        None => {
-                            match param.short.first() {
-                                Some(s) => String::from(s.trim_matches('-')),
-                                None => panic!("crash and burn")
-                            }
-                        }
+                        None => match param.short.first() {
+                            Some(s) => String::from(s.trim_matches('-')),
+                            None => panic!("crash and burn"),
+                        },
                     };
                     param.dest = Some(dest);
                 }
