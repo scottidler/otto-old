@@ -53,7 +53,7 @@ pub struct Otto {
     pub name: String,
 
     #[serde(default)]
-    pub help: String,
+    pub help: Option<String>,
 
     #[serde(default, deserialize_with = "deserialize_param_map")]
     pub params: Params,
@@ -107,7 +107,7 @@ pub struct Task {
     pub name: String,
 
     #[serde(default)]
-    pub help: String,
+    pub help: Option<String>,
 
     #[serde(default)]
     pub after: Vec<String>,
