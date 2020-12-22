@@ -38,7 +38,7 @@ fn main() -> Result<()> {
     //println!("parser: {:#?}", parser);
 
     let parsed = parser.parse(args);
-    //println!("parsed: {:#?}", parsed);
+    println!("parsed: {:#?}", parsed);
 
     let otto = spec.otto.clone();
 
@@ -53,7 +53,6 @@ fn main() -> Result<()> {
     let frank = Token::VAL("frank".to_string());
     let eof = Token::EOF;
 
-
     let cmd = AST::Cmd(otto_,
         vec![
             AST::Assign(c, Box::new(AST::Atom(filename_))),
@@ -63,18 +62,7 @@ fn main() -> Result<()> {
                 AST::Assign(pets, Box::new(AST::Array(vec![bill, frank]))),
             ]),
         ]);
-    /*
-    let cmd = AST::Cmd(hello,
-        vec![
-            AST::Assign(name, Box::new(AST::Atom(scott))),
-            AST::Assign(pets, Box::new(AST::Array(vec![bill, frank]))),
-        ]);
-*/
     println!("otto: {}", cmd);
-    //let cmd = Sexpr::Cons(hello, vec![Sexpr::Assign(long, name)]);
-
-    //println!("cmd = {}", cmd);
-
     Ok(())
 
     /*

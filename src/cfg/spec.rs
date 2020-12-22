@@ -28,7 +28,7 @@ fn default_jobs() -> i32 {
 pub struct Spec {
     pub defaults: Option<Defaults>,
 
-    pub otto: Task,
+    pub otto: Otto,
 }
 
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
@@ -44,6 +44,24 @@ pub struct Defaults {
 
     #[serde(default)]
     pub tasks: Vec<String>,
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+pub struct Otto {
+
+    #[serde(skip_deserializing)]
+    pub name: String,
+
+    #[serde(default)]
+    pub help: String,
+
+    #[serde(default, deserialize_with = "deserialize_param_map")]
+    pub params: Params,
+
+    #[serde(default, deserialize_with = "deserialize_task_map")]
+    pub tasks: Tasks,
+
+    pub action: Option<String>,
 }
 
 // FIXME: Flag, Named and Positional Args
@@ -99,9 +117,6 @@ pub struct Task {
 
     #[serde(default, deserialize_with = "deserialize_param_map")]
     pub params: Params,
-
-    #[serde(default, deserialize_with = "deserialize_task_map")]
-    pub tasks: Tasks,
 
     pub action: Option<String>,
 

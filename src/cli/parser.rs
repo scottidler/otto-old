@@ -2,7 +2,7 @@ use anyhow::Result;
 use std::collections::HashMap;
 
 use super::token::Token;
-use crate::cfg::spec::{Spec, Task};
+use crate::cfg::spec::{Spec, Otto, Task};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Parser {
@@ -16,14 +16,14 @@ pub struct Parser {
 
 impl Parser {
     pub fn new(mut spec: Spec) -> Self {
-        spec.otto.selected = true;
+        //spec.otto.selected = true;
         Self {
             spec: spec,
             tasks: vec!["otto".to_string()],
             tokens: vec![],
         }
     }
-    pub fn parse(mut self, args: Vec<String>) -> Result<Task> {
+    pub fn parse(mut self, args: Vec<String>) -> Result<Otto> {
         Ok(self.spec.otto)
     }
     fn parse_task(mut self, token: Token, mut context: Task) {}
