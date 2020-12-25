@@ -2,25 +2,23 @@ use std::fmt;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token {
-    TSK(String),
+    BLT(String),
+    KWD(String),
     SHT(String),
     LNG(String),
-    CHO(String),
-    POS(String),
     VAL(String),
-    EOF,
+    REM(Vec<String>),
 }
 
 impl fmt::Display for Token {
-    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+    fn fmt(&self, fmtr: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Token::TSK(s) => write!(formatter, "TSK[{}]",s),
-            Token::SHT(s) => write!(formatter, "SHT[{}]",s),
-            Token::LNG(s) => write!(formatter, "LNG[{}]",s),
-            Token::CHO(s) => write!(formatter, "CHO[{}]",s),
-            Token::POS(s) => write!(formatter, "POS[{}]",s),
-            Token::VAL(s) => write!(formatter, "VAL[{}]",s),
-            Token::EOF => write!(formatter, "EOF"),
+            Token::BLT(s) => write!(fmtr, "BLT[{}]", s),
+            Token::KWD(s) => write!(fmtr, "KWD[{}]", s),
+            Token::SHT(s) => write!(fmtr, "SHT[{}]", s),
+            Token::LNG(s) => write!(fmtr, "LNG[{}]", s),
+            Token::VAL(s) => write!(fmtr, "VAL[{}]", s),
+            Token::REM(vs) => write!(fmtr, "REM[{}]", vs.join(" ")),
         }
     }
 }
