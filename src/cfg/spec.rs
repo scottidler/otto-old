@@ -49,7 +49,7 @@ pub struct Defaults {
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 pub struct Otto {
 
-    #[serde(skip_deserializing)]
+    #[serde(skip_deserializing, default = "default_otto")]
     pub name: String,
 
     #[serde(default)]
@@ -77,7 +77,7 @@ pub struct Param {
     pub long: Vec<String>,
 
     #[serde(skip_deserializing)]
-    pub value: String,
+    pub value: Option<String>,
 
     #[serde(default)]
     pub dest: Option<String>,
