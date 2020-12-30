@@ -4,9 +4,12 @@ use serde::Deserialize;
 use std::collections::HashMap;
 use std::fmt;
 use std::vec::Vec;
-
+/*
 type Tasks = HashMap<String, Task>;
 type Params = HashMap<String, Param>;
+*/
+type Tasks = Vec<Task>;
+type Params = Vec<Param>;
 
 fn default_otto() -> String {
     "otto".to_string()
@@ -64,6 +67,33 @@ pub struct Otto {
     pub action: Option<String>,
 }
 
+impl Otto {
+    fn get_task_idx(&self, name: &String) -> Option<usize> {
+        for (idx, task) in self.tasks.iter().enumerate() {
+            if &task.name == name {
+                return Some(idx);
+            }
+        }
+        None
+    }
+    fn get_task(&self, name: &String) -> Option<&Task> {
+        let idx = self.get_task_idx(name)?;
+        self.tasks.get(idx)
+    }
+    fn get_param_idx(&self, flag: &String) -> Option<usize> {
+        for (idx, param) in self.params.iter().enumerate() {
+            if param.flags.iter().any(|f| f == flag) {
+                return Some(idx);
+            }
+        }
+        None
+    }
+    fn get_param(&self, flag: &String) -> Option<&Param> {
+        let idx = self.get_param_idx(flag)?;
+        self.params.get(idx)
+    }
+}
+
 // FIXME: Flag, Named and Positional Args
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 pub struct Param {
@@ -71,10 +101,15 @@ pub struct Param {
     pub name: String,
 
     #[serde(skip_deserializing)]
+    pub flags: Vec<String>,
+
+    /*
+    #[serde(skip_deserializing)]
     pub short: Vec<String>,
 
     #[serde(skip_deserializing)]
     pub long: Vec<String>,
+    */
 
     #[serde(skip_deserializing)]
     pub value: Option<String>,
@@ -143,31 +178,34 @@ where
         {
             let mut params = Params::new();
             while let Some((name, mut param)) = map.next_entry::<String, Param>()? {
-                let flags: Vec<String> = name.split('|').map(|i| i.to_string()).collect();
-                param.short = flags
+                param.flags = name
+                    .split('|')
+                    .map(|f| f.to_string())
+                    .collect();
+                let short: Vec<String> = param.flags
                     .clone()
                     .into_iter()
                     .filter(|i| i.starts_with("-") && i.len() == 2)
                     .map(|i| i.to_string())
                     .collect();
-                param.long = flags
+                let long: Vec<String> = param.flags
                     .clone()
                     .into_iter()
                     .filter(|i| i.starts_with("--") && i.len() > 2)
                     .map(|i| i.to_string())
                     .collect();
                 if param.dest.is_none() {
-                    let dest = match param.long.first() {
-                        Some(l) => String::from(l.trim_matches('-')),
-                        None => match param.short.first() {
-                            Some(s) => String::from(s.trim_matches('-')),
+                    let dest = match long.first() {
+                        Some(long) => String::from(long.trim_matches('-')),
+                        None => match short.first() {
+                            Some(short) => String::from(short.trim_matches('-')),
                             None => panic!("crash and burn"),
                         },
                     };
                     param.dest = Some(dest);
                 }
                 param.name = name.clone();
-                params.insert(name.clone(), param);
+                params.push(param);
             }
             Ok(params)
         }
@@ -195,7 +233,8 @@ where
             let mut tasks = Tasks::new();
             while let Some((name, mut task)) = map.next_entry::<String, Task>()? {
                 task.name = name.clone();
-                tasks.insert(name.clone(), task);
+                //tasks.insert(name.clone(), task);
+                tasks.push(task);
             }
             Ok(tasks)
         }

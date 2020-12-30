@@ -3,7 +3,12 @@ use std::collections::HashMap;
 
 use super::token::Token;
 use super::ast::AST;
-use crate::cfg::spec::{Spec, Otto, Task};
+use crate::cfg::spec::{
+    Spec,
+    Otto,
+    Task,
+    Param,
+};
 
 fn print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>())
@@ -20,6 +25,9 @@ pub struct Parser {
 //type ParamMap = HashMap<String, String>;
 //type TaskMap = HashMap<String, ParamMap>;
 
+
+//const OTTO: Token = Token::KWD("otto".to_string());
+
 impl Parser {
     pub fn new(spec: Spec) -> Self {
         //spec.otto.selected = true;
@@ -30,8 +38,13 @@ impl Parser {
             index: 0,
         }
     }
+    /*
     fn task_names(&self) -> Vec<String> {
         self.spec.otto.tasks.keys().cloned().collect()
+    }
+    */
+    fn task_names(&self) -> Vec<String> {
+        self.spec.otto.tasks.iter().map(|t| t.name.clone()).collect()
     }
     fn builtin_names(&self) -> Vec<String> {
         vec!["help".to_string()]
@@ -67,37 +80,92 @@ impl Parser {
     }
     pub fn parse(&mut self, args: &Vec<String>) -> Result<&Otto> {
         self.tokens = self.tokenize(args);
-        let ast = self.parse_otto()?;
+        //let ast = self.parse_otto(&self.spec.otto)?;
         Ok(&self.spec.otto)
     }
-    fn parse_otto(&mut self) -> Result<AST> {
+    fn parse_otto(&mut self, otto: &Otto) -> Result<AST> {
+        let otto_tok = Token::KWD("otto".to_string());
         let mut asts: Vec<AST> = vec![];
         while let Some(token) = self.peek() {
             let ast = match token {
-                Token::BLT(_) => self.parse_builtin()?,
-                Token::KWD(_) => self.parse_task()?,
-                Token::SHT(_) | Token::LNG(_) => self.parse_param()?,
-                Token::VAL(_) | Token::REM(_) => return Err(anyhow!("something"))
+                Token::KWD(kwd) => {
+                    /*
+                    let task = otto.tasks.get(&kwd).unwrap();
+                    self.parse_task(*task)?
+                    */
+                    return Err(anyhow!("parse_test don't support task yet"))
+                }
+                Token::SHT(sht) => {
+                    /*
+                    let param = otto.params.get_short(sht).expect("parse_otto: expected param for short {}", sht);
+                    self.parse_param(param)?
+                    */
+                    return Err(anyhow!("parse_test don't support short yet"))
+                },
+                Token::LNG(lng) => {
+                    /*
+                    let param = otto.params.get_long(lng).expect("parse_otto: expected param for long {}", lng);
+                    self.parse_param(param)?
+                    */
+                    return Err(anyhow!("parse_test don't support long yet"))
+                },
+                Token::VAL(val) => {
+                    // FIXME: this is where we must track postional variables
+                    return Err(anyhow!("parse_test don't support positional yet"))
+                },
+                //Token::BLT(_) => self.parse_builtin()?, FIXME: support for builtins like 'help'
+                _ => return Err(anyhow!("something"))
             };
             asts.push(ast);
         }
-        Ok(AST::Cmd(Token::KWD("otto".to_string()), asts))
+        Ok(AST::Cmd(otto_tok, asts))
     }
     fn parse_builtin(&mut self) -> Result<AST> {
         Ok(AST::Atom(Token::VAL("hi".to_string())))
     }
-    fn parse_task(&mut self) -> Result<AST> {
+    fn parse_task(&mut self, task: Task) -> Result<AST> {
+        let task_tok = self.next().expect("parse_task expected Token, got None");
+        let mut asts: Vec<AST> = vec![];
+        while let Some(token) = self.peek() {
+            let ast = match token {
+                Token::SHT(sht) => {
+                    /*
+                    let param = task.params.get_short(sht)?;
+                    self.parse_param(param)?
+                    */
+                    return Err(anyhow!("parse_test don't support short yet"))
+                },
+                Token::LNG(lng) => {
+                    /*
+                    let param = task.params.get_long(lng)?;
+                    self.parse_param(param)?
+                    */
+                    return Err(anyhow!("parse_test don't support long yet"))
+                },
+                Token::VAL(val) => {
+                    // FIXME: this is where we must track postional variables
+                    return Err(anyhow!("parse_test don't support positional yet"))
+                },
+                _ => return Err(anyhow!("parse_text expected SHT, LNG or VAL token, got {}", token)),
+            };
+            asts.push(ast);
+        }
+        Ok(AST::Cmd(task_tok, asts))
+    }
+    fn parse_param(&mut self, param: Param) -> Result<AST> {
+        let arg = self.next().expect("parse_param expected Token got None");
         Ok(AST::Atom(Token::VAL("hi".to_string())))
     }
-    fn parse_param(&mut self) -> Result<AST> {
-        Ok(AST::Atom(Token::VAL("hi".to_string())))
+    pub fn peek(&mut self) -> Option<Token> {
+        let token = match self.tokens.get(self.index) {
+            Some(token) => token.clone(),
+            None => return None,
+        };
+        Some(token)
     }
-    pub fn peek(&mut self) -> Option<&Token> {
-        self.tokens.get(self.index)
-    }
-    pub fn next(&mut self) -> Option<&Token> {
-        let token = self.tokens.get(self.index);
+    pub fn next(&mut self) -> Option<Token> {
+        let token = self.peek()?;
         self.index += 1;
-        token
+        Some(token)
     }
 }

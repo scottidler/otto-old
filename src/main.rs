@@ -34,7 +34,7 @@ fn main() -> Result<()> {
     //println!("parsed: {:#?}", parsed);
 
     let otto = spec.otto.clone();
-
+    /*
     let c = Token::SHT("-c".to_string());
     let filename_ = Token::VAL("examples/ex1.yml".to_string());
     let otto_ = Token::KWD("otto".to_string());
@@ -55,5 +55,6 @@ fn main() -> Result<()> {
             ]),
         ]);
     println!("otto: {}", cmd);
+    */
     Ok(())
 }
