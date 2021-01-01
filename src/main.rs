@@ -12,7 +12,7 @@ use cfg::loader::Loader;
 
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().skip(1).collect();
-    //println!("args: {:#?}", args);
+    println!("args: {:#?}", args);
 
     let verbose = true;
     if verbose {
