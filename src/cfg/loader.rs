@@ -1,5 +1,4 @@
 use anyhow::{Context, Error, Result};
-use std::fmt;
 use std::fs;
 
 use super::spec::{Param, Spec, Task};
