@@ -1,15 +1,18 @@
-use anyhow::{Context, Result};
+use anyhow::{
+    anyhow,
+    Result,
+};
 use serde::de::{Deserializer, MapAccess, Visitor};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fmt;
 use std::vec::Vec;
 /*
-type Tasks = HashMap<String, Task>;
-type Params = HashMap<String, Param>;
-*/
 type Tasks = Vec<Task>;
 type Params = Vec<Param>;
+*/
+type Tasks = HashMap<String, Task>;
+type Params = HashMap<String, Param>;
 
 fn default_otto() -> String {
     "otto".to_string()
@@ -26,10 +29,19 @@ fn default_version() -> i32 {
 fn default_jobs() -> i32 {
     12
 }
+fn default_defaults() -> Defaults {
+    Defaults {
+        version: default_version(),
+        verbosity: default_verbosity(),
+        jobs: default_jobs(),
+        tasks: vec![],
+    }
+}
 
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 pub struct Spec {
-    pub defaults: Option<Defaults>,
+    #[serde(default = "default_defaults")]
+    pub defaults: Defaults,
 
     pub otto: Otto,
 }
@@ -68,29 +80,31 @@ pub struct Otto {
 }
 
 impl Otto {
-    fn get_task_idx(&self, name: &String) -> Option<usize> {
-        for (idx, task) in self.tasks.iter().enumerate() {
-            if &task.name == name {
-                return Some(idx);
-            }
-        }
-        None
-    }
-    fn get_task(&self, name: &String) -> Option<&Task> {
-        let idx = self.get_task_idx(name)?;
-        self.tasks.get(idx)
-    }
-    fn get_param_idx(&self, flag: &String) -> Option<usize> {
-        for (idx, param) in self.params.iter().enumerate() {
+    fn get_param_key(&self, flag: &String) ->Result<&String> {
+        for (key, param) in self.params.iter() {
             if param.flags.iter().any(|f| f == flag) {
-                return Some(idx);
+                return Ok(&key);
             }
         }
-        None
+        Err(anyhow!("couldn't find key with flag given {}", flag))
     }
-    fn get_param(&self, flag: &String) -> Option<&Param> {
-        let idx = self.get_param_idx(flag)?;
-        self.params.get(idx)
+    pub fn get_param(&self, name: &String) -> Result<&Param> {
+        self.params.get(name).ok_or(anyhow!("get_param: failed to get name={}", name))
+    }
+    pub fn get_param_from_flag(&self, flag: &String) -> Result<&Param> {
+        let key = self.get_param_key(flag)?;
+        self.get_param(key)
+    }
+    pub fn set_param(&mut self, param: Param) -> Result<Param> {
+        let name = param.name.clone();
+        self.params.insert(name.clone(), param).ok_or(anyhow!("set_param: failed to set param.name={}", name))
+    }
+    pub fn get_task(&self, name: &String) -> Result<&Task> {
+        self.tasks.get(name).ok_or(anyhow!("get_task: failed to get param={}", name))
+    }
+    pub fn set_task(&mut self, task: Task) -> Result<Task> {
+        let name = task.name.clone();
+        self.tasks.insert(name.clone(), task).ok_or(anyhow!("set_task: failed to set task.name={}", name))
     }
 }
 
@@ -102,14 +116,6 @@ pub struct Param {
 
     #[serde(skip_deserializing)]
     pub flags: Vec<String>,
-
-    /*
-    #[serde(skip_deserializing)]
-    pub short: Vec<String>,
-
-    #[serde(skip_deserializing)]
-    pub long: Vec<String>,
-    */
 
     #[serde(skip_deserializing)]
     pub value: Option<String>,
@@ -159,6 +165,27 @@ pub struct Task {
     pub selected: bool,
 }
 
+impl Task {
+    fn get_param_key(&self, flag: &String) -> Option<&String> {
+        for (key, param) in self.params.iter() {
+            if param.flags.iter().any(|f| f == flag) {
+                Some(&key);
+            }
+        }
+        None
+    }
+    pub fn get_param_from_flag(&self, flag: &String) -> Option<&Param> {
+        let key = self.get_param_key(flag)?;
+        self.params.get(key)
+    }
+    pub fn get_param(&self, name: &String) -> Option<&Param> {
+        self.params.get(name)
+    }
+    pub fn set_param(&mut self, param: Param) -> Option<Param> {
+        self.params.insert(param.name.clone(), param)
+    }
+}
+
 fn deserialize_param_map<'de, D>(deserializer: D) -> Result<Params, D::Error>
 where
     D: Deserializer<'de>,
@@ -205,7 +232,7 @@ where
                     param.dest = Some(dest);
                 }
                 param.name = name.clone();
-                params.push(param);
+                params.insert(name.clone(), param);
             }
             Ok(params)
         }
@@ -233,8 +260,7 @@ where
             let mut tasks = Tasks::new();
             while let Some((name, mut task)) = map.next_entry::<String, Task>()? {
                 task.name = name.clone();
-                //tasks.insert(name.clone(), task);
-                tasks.push(task);
+                tasks.insert(name.clone(), task);
             }
             Ok(tasks)
         }
