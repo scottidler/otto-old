@@ -4,6 +4,15 @@ defaults:
   - world
 otto:
   tasks:
+    punch:
+      params:
+        -n|--nargs:
+          default: punch
+          constant:
+          - donkey
+          - punch
+          nargs: 0
+          help: the famous move
     hello:
       params:
         -g|--greeting:
