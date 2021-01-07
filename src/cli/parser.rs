@@ -10,6 +10,8 @@ use crate::cfg::spec::{
     Otto,
     Task,
     Param,
+    Nargs,
+    Value,
 };
 
 fn print_type_of<T>(_: &T) {
@@ -74,14 +76,16 @@ impl Parser {
         self.tokens = self.tokenize(args);
         let mut otto = self.spec.otto.clone();
         while let Ok(token) = self.peek() {
+            println!("parse: token={:?}", token);
             match token {
                 Token::KWD(kwd) => {
+                    self.next()?;
                     let task = otto.get_task(&kwd)?;
                     let task2 = self.parse_task(task)?;
                     otto.set_task(task2)?;
                 }
                 Token::ARG(arg) => {
-                    let param = otto.get_param(&arg)?;
+                    let param = otto.get_param_from_flag(&arg)?;
                     let param2 = self.parse_param(param)?;
                     otto.set_param(param2)?;
                 },
@@ -90,7 +94,7 @@ impl Parser {
                     return Err(anyhow!("parse_test don't support positional yet; val={}", val))
                 },
                 //Token::BLT(_) => self.parse_builtin()?, FIXME: support for builtins like 'help'
-                _ => return Err(anyhow!("something"))
+                _ => return Err(anyhow!("unexpected error on token={:?}", token))
             };
         }
        Ok(otto)
@@ -100,13 +104,66 @@ impl Parser {
     }
     fn parse_task(&mut self, task: &Task) -> Result<Task> {
         let mut task = task.clone();
-        let name = self.next()?;
+        task.selected = true;
+        while let Ok(token) = self.peek() {
+            println!("parse: token={:?}", token);
+            match token {
+                Token::KWD(kwd) => {
+                    break;
+                }
+                Token::ARG(arg) => {
+                    self.next()?;
+                    let param = task.get_param_from_flag(&arg)?;
+                    let param2 = self.parse_param(param)?;
+                    task.set_param(param2)?;
+                },
+                Token::VAL(val) => {
+                    // FIXME: this is where we must track postional variables
+                    return Err(anyhow!("parse_test don't support positional yet; val={}", val))
+                },
+                //Token::BLT(_) => self.parse_builtin()?, FIXME: support for builtins like 'help'
+                _ => return Err(anyhow!("unexpected error on token={:?}", token))
+            };
+        }
         Ok(task)
     }
     fn parse_param(&mut self, param: &Param) -> Result<Param> {
+        println!("before parse_param: param={:?}", param);
         let mut param = param.clone();
-        let name = self.next()?;
+        match param.nargs {
+            Nargs::One => self.parse_one(&mut param)?,
+            Nargs::Zero => self.parse_zero(&mut param)?,
+            Nargs::OneOrZero => self.parse_one_or_zero(&mut param)?,
+            Nargs::OneOrMore => self.parse_one_or_more(&mut param)?,
+            Nargs::ZeroOrMore => self.parse_zero_or_more(&mut param)?,
+            Nargs::Range(min, max) => self.parse_range(&mut param, min, max)?,
+        };
+        println!("after parse_param: param={:?}", param);
         Ok(param)
+    }
+    pub fn parse_one(&mut self, param: &mut Param) -> Result<()> {
+        let token = self.peek()?;
+        println!("parse_one: token={:#?}", token);
+        match token {
+            Token::VAL(val) => param.value = Value::Item(val.to_owned()),
+            _ => println!("something else"),
+        }
+        Ok(())
+    }
+    pub fn parse_zero(&mut self, param: &mut Param) -> Result<()> {
+        Ok(())
+    }
+    pub fn parse_one_or_zero(&mut self, param: &mut Param) -> Result<()> {
+        Ok(())
+    }
+    pub fn parse_one_or_more(&mut self, param: &mut Param) -> Result<()> {
+        Ok(())
+    }
+    pub fn parse_zero_or_more(&mut self, param: &mut Param) -> Result<()> {
+        Ok(())
+    }
+    pub fn parse_range(&mut self, param: &mut Param, min: usize, max: usize) -> Result<()> {
+        Ok(())
     }
     pub fn peek(&mut self) -> Result<Token> {
         match self.tokens.get(self.index) {
