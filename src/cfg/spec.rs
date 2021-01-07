@@ -64,6 +64,7 @@ impl<'de> Deserialize<'de> for Nargs {
 pub enum Value {
     Item(String),
     List(Vec<String>),
+    Dict(HashMap<String,String>), //FIXME: no support for this yet
     Empty,
 }
 

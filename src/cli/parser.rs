@@ -145,7 +145,10 @@ impl Parser {
         let token = self.peek()?;
         println!("parse_one: token={:#?}", token);
         match token {
-            Token::VAL(val) => param.value = Value::Item(val.to_owned()),
+            Token::VAL(val) => {
+                self.next();
+                param.value = Value::Item(val.to_owned());
+            }
             _ => println!("something else"),
         }
         Ok(())
