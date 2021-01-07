@@ -25,12 +25,12 @@ fn main() -> Result<()> {
     //println!("loader: {:#?}", loader);
 
     let spec = loader.load(filename).unwrap();
-    //println!("spec: {:#?}", spec);
+    println!("spec: {:#?}", spec);
 
     let mut parser = Parser::new(spec.clone());
     //println!("parser: {:#?}", parser);
 
-    let parsed = parser.parse(&args);
+    let parsed = parser.parse(&args)?;
     //println!("parsed: {:#?}", parsed);
 
     let otto = spec.otto.clone();
