@@ -47,11 +47,11 @@ impl<'de> Deserialize<'de> for Nargs {
                 println!("s={}", s);
                 if s.contains(":") {
                     let parts: Vec<&str> = s.split(":").collect();
-                    let min = parts[0].parse::<usize>().unwrap(); //FIXME: this is awful
-                    let max = parts[1].parse::<usize>().unwrap(); //FIXME: this is awful
+                    let min = parts[0].parse::<usize>().map_err(Error::custom)?;
+                    let max = parts[1].parse::<usize>().map_err(Error::custom)?;
                     Nargs::Range(min-1, max)
                 } else {
-                    let num = s.parse::<usize>().unwrap(); //FIXME: this is awful
+                    let num = s.parse::<usize>().map_err(Error::custom)?;
                     Nargs::Range(0, num)
                 }
             },
