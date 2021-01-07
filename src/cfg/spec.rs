@@ -2,17 +2,104 @@ use anyhow::{
     anyhow,
     Result,
 };
-use serde::de::{Deserializer, MapAccess, Visitor};
+use serde::de::{Deserializer, MapAccess, SeqAccess, Visitor, Error};
 use serde::Deserialize;
 use std::collections::HashMap;
 use std::fmt;
 use std::vec::Vec;
+use std::num::ParseIntError;
 /*
 type Tasks = Vec<Task>;
 type Params = Vec<Param>;
 */
 type Tasks = HashMap<String, Task>;
 type Params = HashMap<String, Param>;
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Nargs {
+    One,
+    Zero,
+    OneOrZero,
+    OneOrMore,
+    ZeroOrMore,
+    Range(usize, usize),
+}
+
+impl Default for Nargs {
+    fn default() -> Self {
+        Nargs::One
+    }
+}
+
+impl<'de> Deserialize<'de> for Nargs {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>
+    {
+        let s = String::deserialize(deserializer)?;
+        let result = match &s[..] {
+            "1" => Nargs::One,
+            "0" => Nargs::Zero,
+            "?" => Nargs::OneOrZero,
+            "+" => Nargs::OneOrMore,
+            "*" => Nargs::ZeroOrMore,
+            _ => {
+                println!("s={}", s);
+                if s.contains(":") {
+                    let parts: Vec<&str> = s.split(":").collect();
+                    let min = parts[0].parse::<usize>().unwrap(); //FIXME: this is awful
+                    let max = parts[1].parse::<usize>().unwrap(); //FIXME: this is awful
+                    Nargs::Range(min-1, max)
+                } else {
+                    let num = s.parse::<usize>().unwrap(); //FIXME: this is awful
+                    Nargs::Range(0, num)
+                }
+            },
+        };
+        Ok(result)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum Value {
+    Item(String),
+    List(Vec<String>),
+    Empty,
+}
+
+impl Default for Value {
+    fn default() -> Self {
+        Value::Empty
+    }
+}
+
+fn deserialize_value<'de, D>(deserializer: D) -> Result<Value, D::Error>
+    where D: Deserializer<'de>
+{
+    struct ValueEnum;
+    impl<'de> Visitor<'de> for ValueEnum {
+        type Value = Value;
+
+        fn expecting(&self, fmtr: &mut fmt::Formatter) -> fmt::Result {
+            fmtr.write_str("string or list of strings")
+        }
+        fn visit_str<E>(self, value: &str) -> Result<Self::Value, E>
+            where E: Error
+        {
+            Ok(Value::Item(value.to_owned()))
+        }
+        fn visit_seq<S>(self, mut visitor: S) -> Result<Self::Value, S::Error>
+            where S: SeqAccess<'de>
+        {
+            let mut vec: Vec<String> = vec![];
+            while let Some(item) = visitor.next_element()? {
+                vec.push(item);
+            }
+            Ok(Value::List(vec))
+        }
+    }
+    deserializer.deserialize_any(ValueEnum)
+}
 
 fn default_otto() -> String {
     "otto".to_string()
@@ -108,6 +195,12 @@ impl Otto {
     }
 }
 
+pub enum ParamType {
+    FLG,
+    OPT,
+    POS,
+}
+
 // FIXME: Flag, Named and Positional Args
 #[derive(Clone, Debug, Default, PartialEq, Deserialize)]
 pub struct Param {
@@ -118,7 +211,7 @@ pub struct Param {
     pub flags: Vec<String>,
 
     #[serde(skip_deserializing)]
-    pub value: Option<String>,
+    pub value: Value,
 
     #[serde(default)]
     pub dest: Option<String>,
@@ -129,60 +222,38 @@ pub struct Param {
     #[serde(default)]
     pub default: Option<String>,
 
-    #[serde(default)]
-    pub constant: Option<String>,
+    #[serde(default, deserialize_with = "deserialize_value")]
+    pub constant: Value,
 
     #[serde(default)]
     pub choices: Vec<String>,
 
     #[serde(default)]
-    pub nargs: Option<String>,
+    pub nargs: Nargs,
 
     #[serde(default)]
     pub help: Option<String>,
 }
 
-#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
-pub struct Task {
-    #[serde(skip_deserializing)]
-    pub name: String,
-
-    #[serde(default)]
-    pub help: Option<String>,
-
-    #[serde(default)]
-    pub after: Vec<String>,
-
-    #[serde(default)]
-    pub before: Vec<String>,
-
-    #[serde(default, deserialize_with = "deserialize_param_map")]
-    pub params: Params,
-
-    pub action: Option<String>,
-
-    #[serde(skip_deserializing)]
-    pub selected: bool,
-}
-
-impl Task {
-    fn get_param_key(&self, flag: &String) -> Option<&String> {
-        for (key, param) in self.params.iter() {
-            if param.flags.iter().any(|f| f == flag) {
-                Some(&key);
-            }
+impl Param {
+    pub fn param_type(&self) -> ParamType {
+        if self.flags.len() == 0 {
+            return ParamType::POS;
         }
-        None
-    }
-    pub fn get_param_from_flag(&self, flag: &String) -> Option<&Param> {
-        let key = self.get_param_key(flag)?;
-        self.params.get(key)
-    }
-    pub fn get_param(&self, name: &String) -> Option<&Param> {
-        self.params.get(name)
-    }
-    pub fn set_param(&mut self, param: Param) -> Option<Param> {
-        self.params.insert(param.name.clone(), param)
+        ParamType::OPT
+        /*
+        match &self.nargs {
+            Some(nargs) => {
+                if nargs == "0" {
+                    ParamType::FLG
+                }
+                else {
+                    ParamType::OPT
+                }
+            }
+            None => ParamType::OPT
+        }
+        */
     }
 }
 
@@ -238,6 +309,51 @@ where
         }
     }
     deserializer.deserialize_map(ParamMap)
+}
+
+#[derive(Clone, Debug, Default, PartialEq, Deserialize)]
+pub struct Task {
+    #[serde(skip_deserializing)]
+    pub name: String,
+
+    #[serde(default)]
+    pub help: Option<String>,
+
+    #[serde(default)]
+    pub after: Vec<String>,
+
+    #[serde(default)]
+    pub before: Vec<String>,
+
+    #[serde(default, deserialize_with = "deserialize_param_map")]
+    pub params: Params,
+
+    pub action: Option<String>,
+
+    #[serde(skip_deserializing)]
+    pub selected: bool,
+}
+
+impl Task {
+    fn get_param_key(&self, flag: &String) ->Result<&String> {
+        for (key, param) in self.params.iter() {
+            if param.flags.iter().any(|f| f == flag) {
+                return Ok(&key);
+            }
+        }
+        Err(anyhow!("couldn't find key with flag given {}", flag))
+    }
+    pub fn get_param(&self, name: &String) -> Result<&Param> {
+        self.params.get(name).ok_or(anyhow!("get_param: failed to get name={}", name))
+    }
+    pub fn get_param_from_flag(&self, flag: &String) -> Result<&Param> {
+        let key = self.get_param_key(flag)?;
+        self.get_param(key)
+    }
+    pub fn set_param(&mut self, param: Param) -> Result<Param> {
+        let name = param.name.clone();
+        self.params.insert(name.clone(), param).ok_or(anyhow!("set_param: failed to set param.name={}", name))
+    }
 }
 
 fn deserialize_task_map<'de, D>(deserializer: D) -> Result<Tasks, D::Error>
