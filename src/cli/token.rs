@@ -6,17 +6,19 @@ pub enum Token {
     KWD(String),
     ARG(String),
     VAL(String),
+    KVP(String),
     REM(Vec<String>),
 }
 
 impl fmt::Display for Token {
     fn fmt(&self, fmtr: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Token::BLT(s) => write!(fmtr, "BLT[{}]", s),
-            Token::KWD(s) => write!(fmtr, "KWD[{}]", s),
-            Token::ARG(s) => write!(fmtr, "ARG[{}]", s),
-            Token::VAL(s) => write!(fmtr, "VAL[{}]", s),
-            Token::REM(vs) => write!(fmtr, "REM[{}]", vs.join(" ")),
+            Token::BLT(s) => write!(fmtr, "Token::BLT[{}]", s),
+            Token::KWD(s) => write!(fmtr, "Token::KWD[{}]", s),
+            Token::ARG(s) => write!(fmtr, "Token::ARG[{}]", s),
+            Token::VAL(s) => write!(fmtr, "Token::VAL[{}]", s),
+            Token::KVP(s) => write!(fmtr, "Token::KVP[{}]", s),
+            Token::REM(vs) => write!(fmtr, "Token::REM[{}]", vs.join(" ")),
         }
     }
 }
