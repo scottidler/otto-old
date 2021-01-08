@@ -31,7 +31,8 @@ fn main() -> Result<()> {
     //println!("parser: {:#?}", parser);
 
     let parsed = parser.parse(&args)?;
-    //println!("parsed: {:#?}", parsed);
+    println!("************************************************************************");
+    println!("parsed: {:#?}", parsed);
 
     let otto = spec.otto.clone();
     /*
