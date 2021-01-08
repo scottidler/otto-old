@@ -25,6 +25,19 @@ pub enum Nargs {
     Range(usize, usize),
 }
 
+impl fmt::Display for Nargs {
+    fn fmt(&self, fmtr: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Nargs::One => write!(fmtr, "Nargs::One[1]"),
+            Nargs::Zero => write!(fmtr, "Nargs::Zero[0]"),
+            Nargs::OneOrZero => write!(fmtr, "Nargs::OneOrZero[?]"),
+            Nargs::OneOrMore => write!(fmtr, "Nargs::OneOrMore[+]"),
+            Nargs::ZeroOrMore => write!(fmtr, "Nargs::ZeroOrMore[*]"),
+            Nargs::Range(min,max) => write!(fmtr, "Nargs::Range[{}, {}]", min+1, max),
+        }
+    }
+}
+
 impl Default for Nargs {
     fn default() -> Self {
         Nargs::One
@@ -64,8 +77,19 @@ impl<'de> Deserialize<'de> for Nargs {
 pub enum Value {
     Item(String),
     List(Vec<String>),
-    Dict(HashMap<String,String>), //FIXME: no support for this yet
+    Dict(HashMap<String,String>),
     Empty,
+}
+
+impl fmt::Display for Value {
+    fn fmt(&self, fmtr: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Value::Item(s) => write!(fmtr, "Values::Item({})", s),
+            Value::List(vs) => write!(fmtr, "Values::List([{}])", vs.join(", ")),
+            Value::Dict(ds) => write!(fmtr, "Values::Dict[NOT IMPLEMENTED]"),
+            Value::Empty => write!(fmtr, "Value::Empty(\"\")"),
+        }
+    }
 }
 
 impl Default for Value {
