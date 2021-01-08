@@ -5,7 +5,6 @@ use std::env;
 pub mod cfg;
 pub mod cli;
 
-use cli::ast::AST;
 use cli::token::Token;
 use cli::parser::Parser;
 use cfg::loader::Loader;
@@ -46,15 +45,6 @@ fn main() -> Result<()> {
     let bill = Token::VAL("bill".to_string());
     let frank = Token::VAL("frank".to_string());
 
-    let cmd = AST::Cmd(otto_,
-        vec![
-            AST::Assign(c, Box::new(AST::Atom(filename_))),
-            AST::Cmd(hello,
-            vec![
-                AST::Assign(name, Box::new(AST::Atom(scott))),
-                AST::Assign(pets, Box::new(AST::Array(vec![bill, frank]))),
-            ]),
-        ]);
     println!("otto: {}", cmd);
     */
     Ok(())
