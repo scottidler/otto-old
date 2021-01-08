@@ -4,7 +4,6 @@ use anyhow::{
 };
 
 use super::token::Token;
-use super::ast::AST;
 use crate::cfg::spec::{
     Spec,
     Otto,
@@ -13,6 +12,8 @@ use crate::cfg::spec::{
     Nargs,
     Value,
 };
+
+use std::collections::HashMap;
 
 fn print_type_of<T>(_: &T) {
     println!("{}", std::any::type_name::<T>())
@@ -60,6 +61,9 @@ impl Parser {
             else if arg.starts_with("-") {
                 tokens.push(Token::ARG(arg.to_string()))
             }
+            else if arg.contains("=") {
+                tokens.push(Token::KVP(arg.to_string()))
+            }
             else if self.builtin_names().iter().any(|name| name == arg){
                 tokens.push(Token::BLT(arg.to_string()))
             }
@@ -99,8 +103,17 @@ impl Parser {
         }
        Ok(otto)
     }
-    fn parse_builtin(&mut self) -> Result<AST> {
-        Ok(AST::Atom(Token::VAL("hi".to_string())))
+    fn parse_builtin(&mut self) -> Result<Task> {
+        let task = Task::new(
+            "help".to_string(),
+            Some("help".to_string()),
+            vec![],
+            vec![],
+            HashMap::new(),
+            None,
+            true,
+        );
+        Ok(task)
     }
     fn parse_task(&mut self, task: &Task) -> Result<Task> {
         let mut task = task.clone();
@@ -128,7 +141,6 @@ impl Parser {
         Ok(task)
     }
     fn parse_param(&mut self, param: &Param) -> Result<Param> {
-        println!("before parse_param: param={:?}", param);
         let mut param = param.clone();
         match param.nargs {
             Nargs::One => self.parse_one(&mut param)?,
@@ -138,22 +150,41 @@ impl Parser {
             Nargs::ZeroOrMore => self.parse_zero_or_more(&mut param)?,
             Nargs::Range(min, max) => self.parse_range(&mut param, min, max)?,
         };
-        println!("after parse_param: param={:?}", param);
         Ok(param)
     }
     pub fn parse_one(&mut self, param: &mut Param) -> Result<()> {
         let token = self.peek()?;
-        println!("parse_one: token={:#?}", token);
         match token {
-            Token::VAL(val) => {
+            Token::VAL(s) => {
                 self.next();
-                param.value = Value::Item(val.to_owned());
+                param.value = Value::Item(s.to_owned());
+            },
+            Token::BLT(s) |
+            Token::KWD(s) => {
+                if param.choices.iter().any(|i| i == &s) {
+                    self.next();
+                    param.value = Value::Item(s.to_owned());
+                }
+                else {
+                    return Err(anyhow!("parse_one: unexpected BLT|KWD={}, not in choices={:?}", s, param.choices));
+                }
+            },
+            Token::KVP(s) => {
+                let parts: Vec<String> = s.split('=').map(|s| s.to_string()).collect();
+                self.next();
+                let mut dict = HashMap::new();
+                dict.insert(parts[0].clone(), parts[1].clone());
+                param.value = Value::Dict(dict);
+            },
+            Token::ARG(s) => {
+                return Err(anyhow!("parse_one: unexpected arg={}", s));
             }
             _ => println!("something else"),
         }
         Ok(())
     }
     pub fn parse_zero(&mut self, param: &mut Param) -> Result<()> {
+        param.value = param.constant.clone();
         Ok(())
     }
     pub fn parse_one_or_zero(&mut self, param: &mut Param) -> Result<()> {
