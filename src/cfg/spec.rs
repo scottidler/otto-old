@@ -360,6 +360,17 @@ pub struct Task {
 }
 
 impl Task {
+    pub fn new(name: String, help: Option<String>, after: Vec<String>, before: Vec<String>, params: Params, action: Option<String>, selected: bool) -> Self {
+        Self {
+            name,
+            help,
+            after,
+            before,
+            params,
+            action,
+            selected,
+        }
+    }
     fn get_param_key(&self, flag: &String) ->Result<&String> {
         for (key, param) in self.params.iter() {
             if param.flags.iter().any(|f| f == flag) {
