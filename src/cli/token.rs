@@ -8,6 +8,7 @@ pub enum Token {
     VAL(String),
     KVP(String),
     REM(Vec<String>),
+    EOF,
 }
 
 impl fmt::Display for Token {
@@ -19,6 +20,7 @@ impl fmt::Display for Token {
             Token::VAL(s) => write!(fmtr, "Token::VAL[{}]", s),
             Token::KVP(s) => write!(fmtr, "Token::KVP[{}]", s),
             Token::REM(vs) => write!(fmtr, "Token::REM[{}]", vs.join(" ")),
+            Token::EOF => write!(fmtr, "Token::EOF"),
         }
     }
 }

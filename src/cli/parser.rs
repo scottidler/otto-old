@@ -74,13 +74,13 @@ impl Parser {
                 tokens.push(Token::VAL(arg.to_string()))
             }
         }
+        tokens.push(Token::EOF);
         tokens
     }
     pub fn parse(&mut self, args: &Vec<String>) -> Result<Otto> {
         self.tokens = self.tokenize(args);
         let mut otto = self.spec.otto.clone();
         while let Ok(token) = self.peek() {
-            println!("parse: token={:?}", token);
             match token {
                 Token::KWD(kwd) => {
                     self.next()?;
@@ -97,6 +97,7 @@ impl Parser {
                     // FIXME: this is where we must track postional variables
                     return Err(anyhow!("parse_test don't support positional yet; val={}", val))
                 },
+                Token::EOF => break,
                 //Token::BLT(_) => self.parse_builtin()?, FIXME: support for builtins like 'help'
                 _ => return Err(anyhow!("unexpected error on token={:?}", token))
             };
@@ -134,6 +135,7 @@ impl Parser {
                     // FIXME: this is where we must track postional variables
                     return Err(anyhow!("parse_test don't support positional yet; val={}", val))
                 },
+                Token::EOF => break,
                 //Token::BLT(_) => self.parse_builtin()?, FIXME: support for builtins like 'help'
                 _ => return Err(anyhow!("unexpected error on token={:?}", token))
             };
@@ -141,6 +143,7 @@ impl Parser {
         Ok(task)
     }
     fn parse_param(&mut self, param: &Param) -> Result<Param> {
+        println!("parse_param:");
         let mut param = param.clone();
         match param.nargs {
             Nargs::One => self.parse_one(&mut param)?,
@@ -154,6 +157,7 @@ impl Parser {
     }
     pub fn parse_one(&mut self, param: &mut Param) -> Result<()> {
         let token = self.peek()?;
+        println!("parse_one: token={}", token);
         match token {
             Token::VAL(s) => {
                 self.next();
@@ -179,16 +183,24 @@ impl Parser {
             Token::ARG(s) => {
                 return Err(anyhow!("parse_one: unexpected arg={}", s));
             }
+            Token::EOF => {
+                return Err(anyhow!("parse_one: error expected value, got Token::EOF"));
+            }
             _ => println!("something else"),
         }
         Ok(())
     }
     pub fn parse_zero(&mut self, param: &mut Param) -> Result<()> {
+        println!("parse_zero: ");
         param.value = param.constant.clone();
         Ok(())
     }
     pub fn parse_one_or_zero(&mut self, param: &mut Param) -> Result<()> {
-        Ok(())
+        println!("parse_one_or_zero: ");
+        match self.parse_one(param) {
+            Ok(()) => Ok(()),
+            Err(e) => self.parse_zero(param),
+        }
     }
     pub fn parse_one_or_more(&mut self, param: &mut Param) -> Result<()> {
         Ok(())
@@ -202,7 +214,7 @@ impl Parser {
     pub fn peek(&mut self) -> Result<Token> {
         match self.tokens.get(self.index) {
             Some(token) => Ok(token.clone()),
-            None => Err(anyhow!("peek: failed to get next token")),
+            None => Err(anyhow!("peek: unexpected error; self.index={}", self.index)),
         }
     }
     pub fn next(&mut self) -> Result<Token> {
