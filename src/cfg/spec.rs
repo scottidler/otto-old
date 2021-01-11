@@ -98,6 +98,70 @@ impl Default for Value {
     }
 }
 
+impl Value {
+    pub fn combine(&self, other: &Self) -> Result<Self> {
+        let value = match self {
+            Value::Empty => other.clone(),
+            Value::Item(self_s) => {
+                match other {
+                    Value::Empty => Value::Item(self_s.to_string()),
+                    Value::Item(other_s) => {
+                        Value::List(vec![self_s.to_string(), other_s.to_string()])
+                    },
+                    Value::List(other_vs) => {
+                        let mut vs = vec![self_s.to_string()];
+                        vs.append(other_vs.clone().as_mut());
+                        Value::List(vs)
+                    },
+                    Value::Dict(other_ds) => {
+                        return Err(anyhow!("Value: can't combine self_s={} with other_ds={:?}", self_s, other_ds));
+                    },
+                }
+            },
+            Value::List(self_vs) => {
+                match other {
+                    Value::Empty => Value::List(self_vs.clone()),
+                    Value::Item(other_s) => {
+                        let mut vs = self_vs.clone();
+                        vs.push(other_s.to_string());
+                        Value::List(vs)
+                    },
+                    Value::List(other_vs) => {
+                        let mut vs = self_vs.clone();
+                        vs.append(other_vs.clone().as_mut());
+                        Value::List(vs)
+                    },
+                    Value::Dict(other_ds) => {
+                        return Err(anyhow!("Value: can't combine self_vs={:?} with other_ds={:?}", self_vs, other_ds));
+                    },
+                }
+            },
+            Value::Dict(self_ds) => {
+                match other {
+                    Value::Empty => Value::Dict(self_ds.clone()),
+                    Value::Item(other_s) => {
+                        return Err(anyhow!("Value: can't combine self_ds={:?} with other_s={}", self_ds, other_s));
+                    },
+                    Value::List(other_vs) => {
+                        return Err(anyhow!("Value: can't combine self_ds={:?} with other_vs={:?}", self_ds, other_vs));
+                    },
+                    Value::Dict(other_ds) => {
+                        let mut ds = HashMap::new();
+                        for (k,v) in self_ds.iter() {
+                            ds.insert(k.to_string(), v.to_string());
+                        }
+                        for (k,v) in other_ds.iter() {
+                            ds.insert(k.to_string(), v.to_string());
+                        }
+                        Value::Dict(ds)
+                    },
+                }
+            }
+        };
+        Ok(value)
+    }
+}
+
 fn deserialize_value<'de, D>(deserializer: D) -> Result<Value, D::Error>
     where D: Deserializer<'de>
 {
