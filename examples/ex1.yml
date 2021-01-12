@@ -11,7 +11,7 @@ otto:
           constant:
           - donkey
           - punch
-          nargs: '?'
+          nargs: +
           help: the famous move
     hello:
       params:
