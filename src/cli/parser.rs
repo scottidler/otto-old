@@ -155,6 +155,36 @@ impl Parser {
         };
         Ok(param)
     }
+    fn parse_many(&mut self, param: &mut Param, at_least_one: bool) -> Result<()> {
+        let mut vs = vec![];
+        while let Ok(token) = self.peek() {
+            match token {
+                Token::VAL(s) => {
+                    self.next();
+                    vs.push(s.to_owned());
+                },
+                Token::BLT(s) |
+                Token::KWD(s) => {
+                    if param.choices.iter().any(|i| i == &s) {
+                        self.next();
+                        vs.push(s.to_owned());
+                    }
+                    else {
+                        break;
+                    }
+                },
+                Token::KVP(s) => {
+                    return Err(anyhow!("parse_many: not supported yet"));
+                },
+                _ => break,
+            }
+        }
+        if vs.len() == 0 {
+            return Err(anyhow!("parse_many: at_least_one={}, not found", at_least_one));
+        }
+        param.value = Value::List(vs);
+        Ok(())
+    }
     pub fn parse_one(&mut self, param: &mut Param) -> Result<()> {
         let token = self.peek()?;
         println!("parse_one: token={}", token);
@@ -183,10 +213,12 @@ impl Parser {
             Token::ARG(s) => {
                 return Err(anyhow!("parse_one: unexpected arg={}", s));
             }
+            Token::REM(vs) => {
+                return Err(anyhow!("parse_one: error expected value, got Token::REM({:?})", vs));
+            }
             Token::EOF => {
                 return Err(anyhow!("parse_one: error expected value, got Token::EOF"));
             }
-            _ => println!("something else"),
         }
         Ok(())
     }
@@ -203,9 +235,11 @@ impl Parser {
         }
     }
     pub fn parse_one_or_more(&mut self, param: &mut Param) -> Result<()> {
+        self.parse_many(param, true)?;
         Ok(())
     }
     pub fn parse_zero_or_more(&mut self, param: &mut Param) -> Result<()> {
+        self.parse_many(param, false)?;
         Ok(())
     }
     pub fn parse_range(&mut self, param: &mut Param, min: usize, max: usize) -> Result<()> {
