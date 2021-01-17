@@ -6,6 +6,12 @@ otto:
   tasks:
     punch:
       params:
+        -t|--type:
+          choices:
+          - howdy
+          - help
+          default: bueller
+          help: default="bueller"; override type
         -f|--flag:
           default: punch
           constant:
