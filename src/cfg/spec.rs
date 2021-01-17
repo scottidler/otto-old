@@ -2,6 +2,8 @@ use anyhow::{
     anyhow,
     Result,
 };
+use super::error::ConfigError;
+
 use serde::de::{Deserializer, MapAccess, SeqAccess, Visitor, Error};
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -192,31 +194,35 @@ pub struct Otto {
 }
 
 impl Otto {
-    fn get_param_key(&self, flag: &String) ->Result<&String> {
+    fn get_param_key(&self, flag: &String) ->Result<&String, ConfigError> {
         for (key, param) in self.params.iter() {
             if param.flags.iter().any(|f| f == flag) {
                 return Ok(&key);
             }
         }
-        Err(anyhow!("couldn't find key with flag given {}", flag))
+        Err(ConfigError::FlagLookupError(flag.to_string()))
     }
-    pub fn get_param(&self, name: &String) -> Result<&Param> {
-        self.params.get(name).ok_or(anyhow!("get_param: failed to get name={}", name))
+    pub fn get_param(&self, name: &String) -> Result<&Param, ConfigError> {
+        self.params.get(name).ok_or(
+            ConfigError::NameLookupError(name.to_string()))
     }
-    pub fn get_param_from_flag(&self, flag: &String) -> Result<&Param> {
+    pub fn get_param_from_flag(&self, flag: &String) -> Result<&Param, ConfigError> {
         let key = self.get_param_key(flag)?;
         self.get_param(key)
     }
-    pub fn set_param(&mut self, param: Param) -> Result<Param> {
+    pub fn set_param(&mut self, param: Param) -> Result<Param, ConfigError> {
         let name = param.name.clone();
-        self.params.insert(name.clone(), param).ok_or(anyhow!("set_param: failed to set param.name={}", name))
+        self.params.insert(name.clone(), param).ok_or(
+            ConfigError::NameLookupError(name.to_string()))
     }
-    pub fn get_task(&self, name: &String) -> Result<&Task> {
-        self.tasks.get(name).ok_or(anyhow!("get_task: failed to get param={}", name))
+    pub fn get_task(&self, name: &String) -> Result<&Task, ConfigError> {
+        self.tasks.get(name).ok_or(
+            ConfigError::NameLookupError(name.to_string()))
     }
-    pub fn set_task(&mut self, task: Task) -> Result<Task> {
+    pub fn set_task(&mut self, task: Task) -> Result<Task, ConfigError> {
         let name = task.name.clone();
-        self.tasks.insert(name.clone(), task).ok_or(anyhow!("set_task: failed to set task.name={}", name))
+        self.tasks.insert(name.clone(), task).ok_or(
+            ConfigError::NameLookupError(name.to_string()))
     }
 }
 
@@ -371,13 +377,13 @@ impl Task {
             selected,
         }
     }
-    fn get_param_key(&self, flag: &String) ->Result<&String> {
+    fn get_param_key(&self, flag: &String) ->Result<&String, ConfigError> {
         for (key, param) in self.params.iter() {
             if param.flags.iter().any(|f| f == flag) {
                 return Ok(&key);
             }
         }
-        Err(anyhow!("couldn't find key with flag given {}", flag))
+        Err(ConfigError::FlagLookupError(flag.to_string()))
     }
     pub fn get_param(&self, name: &String) -> Result<&Param> {
         self.params.get(name).ok_or(anyhow!("get_param: failed to get name={}", name))
