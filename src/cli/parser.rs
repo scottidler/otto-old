@@ -1,8 +1,7 @@
-use anyhow::{
-    anyhow,
+use super::error::{
+    ParseError,
     Result
 };
-
 use super::token::Token;
 use crate::cfg::spec::{
     Spec,
@@ -95,11 +94,11 @@ impl Parser {
                 },
                 Token::VAL(val) => {
                     // FIXME: this is where we must track postional variables
-                    return Err(anyhow!("parse_test don't support positional yet; val={}", val))
+                    return Err(ParseError::Custom(format!("parse_test doesn't support positional yet; val={}", val)))
                 },
                 Token::EOF => break,
                 //Token::BLT(_) => self.parse_builtin()?, FIXME: support for builtins like 'help'
-                _ => return Err(anyhow!("unexpected error on token={:?}", token))
+                _ => return Err(ParseError::UnexpectedToken(token.clone()))
             };
         }
        Ok(otto)
@@ -133,11 +132,11 @@ impl Parser {
                 },
                 Token::VAL(val) => {
                     // FIXME: this is where we must track postional variables
-                    return Err(anyhow!("parse_test don't support positional yet; val={}", val))
+                    return Err(ParseError::Custom(format!("parse_test doesn't support positional yet; val={}", val)))
                 },
                 Token::EOF => break,
                 //Token::BLT(_) => self.parse_builtin()?, FIXME: support for builtins like 'help'
-                _ => return Err(anyhow!("unexpected error on token={:?}", token))
+                _ => return Err(ParseError::UnexpectedToken(token.clone()))
             };
         }
         Ok(task)
@@ -174,13 +173,14 @@ impl Parser {
                     }
                 },
                 Token::KVP(s) => {
-                    return Err(anyhow!("parse_many: not supported yet"));
+                    return Err(ParseError::Custom("parse_many: not supported yet".to_string()))
                 },
                 _ => break,
             }
         }
         if vs.len() == 0 {
-            return Err(anyhow!("parse_many: at_least_one={}, not found", at_least_one));
+            return Err(ParseError::Custom(format!("parse_many: at_least_one={}, not found", at_least_one)))
+
         }
         param.value = Value::List(vs);
         Ok(())
@@ -200,7 +200,7 @@ impl Parser {
                     param.value = Value::Item(s.to_owned());
                 }
                 else {
-                    return Err(anyhow!("parse_one: unexpected BLT|KWD={}, not in choices={:?}", s, param.choices));
+                    return Err(ParseError::ProtectedNotChoice(Token::KWD(s.to_owned()), param.choices.clone()))
                 }
             },
             Token::KVP(s) => {
@@ -211,13 +211,13 @@ impl Parser {
                 param.value = Value::Dict(dict);
             },
             Token::ARG(s) => {
-                return Err(anyhow!("parse_one: unexpected arg={}", s));
+                return Err(ParseError::UnexpectedToken(Token::ARG(s.to_owned())))
             }
             Token::REM(vs) => {
-                return Err(anyhow!("parse_one: error expected value, got Token::REM({:?})", vs));
+                return Err(ParseError::UnexpectedToken(Token::REM(vs.clone())))
             }
             Token::EOF => {
-                return Err(anyhow!("parse_one: error expected value, got Token::EOF"));
+                return Err(ParseError::UnexpectedToken(Token::EOF))
             }
         }
         Ok(())
@@ -248,7 +248,7 @@ impl Parser {
     pub fn peek(&mut self) -> Result<Token> {
         match self.tokens.get(self.index) {
             Some(token) => Ok(token.clone()),
-            None => Err(anyhow!("peek: unexpected error; self.index={}", self.index)),
+            None => Err(ParseError::Custom(format!("peek: unexpected error; self.index={}", self.index))),
         }
     }
     pub fn next(&mut self) -> Result<Token> {
