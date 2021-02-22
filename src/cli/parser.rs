@@ -41,7 +41,7 @@ impl Parser {
         }
     }
     fn task_names(&self) -> Vec<String> {
-        self.spec.otto.tasks.values().map(|t| t.name.clone()).collect()
+        self.spec.otto.tasks.values().map(|t| t.name.to_owned()).collect()
     }
     fn builtin_names(&self) -> Vec<String> {
         vec!["help".to_string()]
@@ -78,7 +78,7 @@ impl Parser {
     }
     pub fn parse(&mut self, args: &Vec<String>) -> Result<Otto> {
         self.tokens = self.tokenize(args);
-        let mut otto = self.spec.otto.clone();
+        let mut otto = self.spec.otto.to_owned();
         while let Ok(token) = self.peek() {
             match token {
                 Token::KWD(kwd) => {
@@ -98,7 +98,7 @@ impl Parser {
                 },
                 Token::EOF => break,
                 //Token::BLT(_) => self.parse_builtin()?, FIXME: support for builtins like 'help'
-                _ => return Err(ParseError::UnexpectedToken(token.clone()))
+                _ => return Err(ParseError::UnexpectedToken(token.to_owned()))
             };
         }
        Ok(otto)
@@ -116,7 +116,7 @@ impl Parser {
         Ok(task)
     }
     fn parse_task(&mut self, task: &Task) -> Result<Task> {
-        let mut task = task.clone();
+        let mut task = task.to_owned();
         task.selected = true;
         while let Ok(token) = self.peek() {
             println!("parse: token={:?}", token);
@@ -136,14 +136,14 @@ impl Parser {
                 },
                 Token::EOF => break,
                 //Token::BLT(_) => self.parse_builtin()?, FIXME: support for builtins like 'help'
-                _ => return Err(ParseError::UnexpectedToken(token.clone()))
+                _ => return Err(ParseError::UnexpectedToken(token.to_owned()))
             };
         }
         Ok(task)
     }
     fn parse_param(&mut self, param: &Param) -> Result<Param> {
         println!("parse_param:");
-        let mut param = param.clone();
+        let mut param = param.to_owned();
         match param.nargs {
             Nargs::One => self.parse_one(&mut param)?,
             Nargs::Zero => self.parse_zero(&mut param)?,
@@ -200,21 +200,21 @@ impl Parser {
                     param.value = Value::Item(s.to_owned());
                 }
                 else {
-                    return Err(ParseError::ProtectedNotChoice(Token::KWD(s.to_owned()), param.choices.clone()))
+                    return Err(ParseError::ProtectedNotChoice(Token::KWD(s.to_owned()), param.choices.to_owned()))
                 }
             },
             Token::KVP(s) => {
                 let parts: Vec<String> = s.split('=').map(|s| s.to_string()).collect();
                 self.next();
                 let mut dict = HashMap::new();
-                dict.insert(parts[0].clone(), parts[1].clone());
+                dict.insert(parts[0].to_owned(), parts[1].to_owned());
                 param.value = Value::Dict(dict);
             },
             Token::ARG(s) => {
                 return Err(ParseError::UnexpectedToken(Token::ARG(s.to_owned())))
             }
             Token::REM(vs) => {
-                return Err(ParseError::UnexpectedToken(Token::REM(vs.clone())))
+                return Err(ParseError::UnexpectedToken(Token::REM(vs.to_owned())))
             }
             Token::EOF => {
                 return Err(ParseError::UnexpectedToken(Token::EOF))
@@ -224,7 +224,7 @@ impl Parser {
     }
     pub fn parse_zero(&mut self, param: &mut Param) -> Result<()> {
         println!("parse_zero: ");
-        param.value = param.constant.clone();
+        param.value = param.constant.to_owned();
         Ok(())
     }
     pub fn parse_one_or_zero(&mut self, param: &mut Param) -> Result<()> {
@@ -247,7 +247,7 @@ impl Parser {
     }
     pub fn peek(&mut self) -> Result<Token> {
         match self.tokens.get(self.index) {
-            Some(token) => Ok(token.clone()),
+            Some(token) => Ok(token.to_owned()),
             None => Err(ParseError::Custom(format!("peek: unexpected error; self.index={}", self.index))),
         }
     }

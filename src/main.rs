@@ -26,14 +26,14 @@ fn main() -> Result<()> {
     let spec = loader.load(filename).unwrap();
     println!("spec: {:#?}", spec);
 
-    let mut parser = Parser::new(spec.clone());
+    let mut parser = Parser::new(spec.to_owned());
     //println!("parser: {:#?}", parser);
 
     let parsed = parser.parse(&args)?;
     println!("************************************************************************");
     println!("parsed: {:#?}", parsed);
 
-    let otto = spec.otto.clone();
+    let otto = spec.otto.to_owned();
     /*
     let c = Token::SHT("-c".to_string());
     let filename_ = Token::VAL("examples/ex1.yml".to_string());

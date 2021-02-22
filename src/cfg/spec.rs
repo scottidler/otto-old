@@ -194,7 +194,7 @@ pub struct Otto {
 }
 
 impl Otto {
-    fn get_param_key(&self, flag: &String) ->Result<&String, ConfigError> {
+    fn get_param_key(&self, flag: &String) -> Result<&String, ConfigError> {
         for (key, param) in self.params.iter() {
             if param.flags.iter().any(|f| f == flag) {
                 return Ok(&key);
@@ -211,8 +211,8 @@ impl Otto {
         self.get_param(key)
     }
     pub fn set_param(&mut self, param: Param) -> Result<Param, ConfigError> {
-        let name = param.name.clone();
-        self.params.insert(name.clone(), param).ok_or(
+        let name = param.name.to_owned();
+        self.params.insert(name.to_owned(), param).ok_or(
             ConfigError::NameLookupError(name.to_string()))
     }
     pub fn get_task(&self, name: &String) -> Result<&Task, ConfigError> {
@@ -220,8 +220,8 @@ impl Otto {
             ConfigError::NameLookupError(name.to_string()))
     }
     pub fn set_task(&mut self, task: Task) -> Result<Task, ConfigError> {
-        let name = task.name.clone();
-        self.tasks.insert(name.clone(), task).ok_or(
+        let name = task.name.to_owned();
+        self.tasks.insert(name.to_owned(), task).ok_or(
             ConfigError::NameLookupError(name.to_string()))
     }
 }
@@ -312,13 +312,13 @@ where
                     .map(|f| f.to_string())
                     .collect();
                 let short: Vec<String> = param.flags
-                    .clone()
+                    .to_owned()
                     .into_iter()
                     .filter(|i| i.starts_with("-") && i.len() == 2)
                     .map(|i| i.to_string())
                     .collect();
                 let long: Vec<String> = param.flags
-                    .clone()
+                    .to_owned()
                     .into_iter()
                     .filter(|i| i.starts_with("--") && i.len() > 2)
                     .map(|i| i.to_string())
@@ -333,8 +333,8 @@ where
                     };
                     param.dest = Some(dest);
                 }
-                param.name = name.clone();
-                params.insert(name.clone(), param);
+                param.name = name.to_owned();
+                params.insert(name.to_owned(), param);
             }
             Ok(params)
         }
@@ -377,7 +377,7 @@ impl Task {
             selected,
         }
     }
-    fn get_param_key(&self, flag: &String) ->Result<&String, ConfigError> {
+    fn get_param_key(&self, flag: &String) -> Result<&String, ConfigError> {
         for (key, param) in self.params.iter() {
             if param.flags.iter().any(|f| f == flag) {
                 return Ok(&key);
@@ -393,8 +393,8 @@ impl Task {
         self.get_param(key)
     }
     pub fn set_param(&mut self, param: Param) -> Result<Param> {
-        let name = param.name.clone();
-        self.params.insert(name.clone(), param).ok_or(anyhow!("set_param: failed to set param.name={}", name))
+        let name = param.name.to_owned();
+        self.params.insert(name.to_owned(), param).ok_or(anyhow!("set_param: failed to set param.name={}", name))
     }
 }
 
@@ -417,8 +417,8 @@ where
         {
             let mut tasks = Tasks::new();
             while let Some((name, mut task)) = map.next_entry::<String, Task>()? {
-                task.name = name.clone();
-                tasks.insert(name.clone(), task);
+                task.name = name.to_owned();
+                tasks.insert(name.to_owned(), task);
             }
             Ok(tasks)
         }
