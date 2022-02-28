@@ -1,3 +1,4 @@
+#![allow(unused_imports, unused_variables, dead_code)]
 use anyhow::Result;
 use log::{info, warn};
 use std::env;
